@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asociador RFID + Velneo</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --ok: #15803d;
+      --warn: #b45309;
+      --bad: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.03);
+    }
+    .stack > * + * { margin-top: 12px; }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    input, select, textarea, button {
+      font: inherit;
+    }
+    input[type="text"], input[type="search"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+    }
+    textarea { min-height: 84px; resize: vertical; }
+    button {
+      border: 0;
+      background: var(--accent);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    button.good { background: var(--ok); }
+    button.warn { background: var(--warn); }
+    button.bad { background: var(--bad); }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .row > * { flex: 1; }
+    .row .auto { flex: 0 0 auto; }
+    .muted { color: var(--muted); }
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #3730a3;
+      margin-right: 6px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .stat {
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .stat .n { font-size: 24px; font-weight: 800; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: white;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: #f9fafb;
+      z-index: 1;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      color: var(--muted);
+    }
+    .table-wrap {
+      max-height: 65vh;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+    .tag-ok { color: var(--ok); font-weight: 700; }
+    .tag-bad { color: var(--bad); font-weight: 700; }
+    .tag-warn { color: var(--warn); font-weight: 700; }
+    .mono { font-family: Consolas, monospace; }
+    .small { font-size: 12px; }
+    .notice {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .success {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+    .warning {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fed7aa;
+    }
+    .danger {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .hidden { display: none; }
+    @media (max-width: 980px) {
+      .grid, .split, .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Asociador RFID + exportación Velneo</h1>
+    <p class="muted">App local para cargar un CSV exportado de Velneo, leer RFID con teclado-emulador, asociar cada etiqueta a una prenda física y exportar el resultado.</p>
+
+    <div class="grid">
+      <div class="stack">
+        <div class="card stack">
+          <h2>1. Cargar base de Velneo</h2>
+          <div class="notice">Admite CSV con separador <b>;</b> o <b>,</b>. La app intenta detectar columnas automáticamente, pero puedes ajustarlas debajo.</div>
+          <div>
+            <label for="csvFile">Archivo CSV</label>
+            <input id="csvFile" type="file" accept=".csv,text/csv" />
+          </div>
+          <div class="split">
+            <div>
+              <label for="sep">Separador</label>
+              <select id="sep">
+                <option value="auto">Auto</option>
+                <option value=";">;</option>
+                <option value=",">,</option>
+                <option value="\t">Tab</option>
+              </select>
+            </div>
+            <div>
+              <label for="encoding">Codificación</label>
+              <select id="encoding">
+                <option value="utf-8">UTF-8</option>
+                <option value="iso-8859-1">ISO-8859-1</option>
+                <option value="windows-1252">Windows-1252</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <button id="btnDemo" class="secondary auto">Cargar ejemplo</button>
+            <button id="btnClearAll" class="bad auto">Borrar todo</button>
+          </div>
+        </div>
+
+        <div class="card stack">
+          <h2>2. Mapear columnas</h2>
+          <div class="split">
+            <div>
+              <label for="colEAN">Columna EAN</label>
+              <select id="colEAN"></select>
+            </div>
+            <div>
+              <label for="colDescripcion">Columna descripción</label>
+              <select id="colDescripcion"></select>
+            </div>
+            <div>
+              <label for="colTalla">Columna talla</label>
+              <select id="colTalla"></select>
+            </div>
+            <div>
+              <label for="colEstado">Columna estado</label>
+              <select id="colEstado"></select>
+            </div>
+            <div>
+              <label for="colManga">Columna largo manga</label>
+              <select id="colManga"></select>
+            </div>
+            <div>
+              <label for="colUbicacion">Columna ubicación</label>
+              <select id="colUbicacion"></select>
+            </div>
+          </div>
+          <button id="btnApplyMapping">Aplicar mapeo</button>
+        </div>
+
+        <div class="card stack">
+          <h2>3. Asociar RFID</h2>
+          <div class="notice success">Ideal para usar con el lector Chainway en modo teclado. Escaneas EAN y luego RFID, o buscas la prenda y escaneas solo RFID.</div>
+
+          <div>
+            <label for="scanEAN">Escanear o escribir EAN</label>
+            <input id="scanEAN" type="text" placeholder="Escanea el EAN de la prenda o escríbelo" />
+          </div>
+
+          <div>
+            <label for="scanRFID">Escanear RFID</label>
+            <input id="scanRFID" type="text" placeholder="Escanea la etiqueta RFID" />
+          </div>
+
+          <div class="split">
+            <div>
+              <label for="estadoManual">Estado inicial</label>
+              <select id="estadoManual">
+                <option value="">No tocar</option>
+                <option value="nuevo">Nuevo</option>
+                <option value="usado">Usado</option>
+                <option value="alquilado">Alquilado</option>
+              </select>
+            </div>
+            <div>
+              <label for="ubicacionManual">Ubicación</label>
+              <input id="ubicacionManual" type="text" placeholder="Ej. Hermosilla / Almacén 34" />
+            </div>
+          </div>
+
+          <div class="row">
+            <button id="btnAssociate" class="good auto">Asociar EAN + RFID</button>
+            <button id="btnAssociateSelected" class="auto">Asociar al registro seleccionado</button>
+            <button id="btnClearScan" class="secondary auto">Limpiar</button>
+          </div>
+
+          <div id="associationStatus" class="notice hidden"></div>
+        </div>
+
+        <div class="card stack">
+          <h2>4. Buscar y revisar</h2>
+          <div>
+            <label for="search">Buscar por EAN, descripción, talla o RFID</label>
+            <input id="search" type="search" placeholder="Ej. 843..., CHQ N 999/3 48, E280..." />
+          </div>
+          <div class="split">
+            <div>
+              <label for="filterEstado">Filtrar estado</label>
+              <select id="filterEstado">
+                <option value="">Todos</option>
+                <option value="nuevo">Nuevo</option>
+                <option value="usado">Usado</option>
+                <option value="alquilado">Alquilado</option>
+              </select>
+            </div>
+            <div>
+              <label for="onlyNoRFID">RFID</label>
+              <select id="onlyNoRFID">
+                <option value="all">Todos</option>
+                <option value="with">Solo con RFID</option>
+                <option value="without">Solo sin RFID</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card stack">
+          <h2>5. Exportar</h2>
+          <div class="row">
+            <button id="btnExportCsv">Exportar CSV asociaciones</button>
+            <button id="btnExportJson" class="secondary">Exportar JSON backup</button>
+            <button id="btnImportJson" class="secondary">Importar JSON backup</button>
+            <input id="jsonFile" type="file" accept=".json,application/json" class="hidden" />
+          </div>
+          <div class="small muted">El CSV exporta una fila por prenda con RFID y datos base. Útil para luego importar o cruzar con Velneo.</div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="stats">
+            <div class="stat"><div class="muted small">Filas base</div><div id="statBase" class="n">0</div></div>
+            <div class="stat"><div class="muted small">Con RFID</div><div id="statLinked" class="n">0</div></div>
+            <div class="stat"><div class="muted small">Sin RFID</div><div id="statUnlinked" class="n">0</div></div>
+            <div class="stat"><div class="muted small">RFID únicos</div><div id="statUnique" class="n">0</div></div>
+          </div>
+        </div>
+
+        <div class="card stack">
+          <div class="row">
+            <div>
+              <h2>Base de trabajo</h2>
+              <div class="small muted">Haz clic en una fila para seleccionarla. Después puedes asociar un RFID a esa prenda.</div>
+            </div>
+            <div class="auto">
+              <span id="selectedInfo" class="pill">Ningún registro seleccionado</span>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>EAN</th>
+                  <th>Descripción</th>
+                  <th>Talla</th>
+                  <th>Manga</th>
+                  <th>Estado</th>
+                  <th>Ubicación</th>
+                  <th>RFID</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      rawRows: [],
+      headers: [],
+      mappedRows: [],
+      mapping: {
+        ean: '',
+        descripcion: '',
+        talla: '',
+        estado: '',
+        manga: '',
+        ubicacion: ''
+      },
+      selectedId: null
+    };
+
+    const els = {
+      csvFile: document.getElementById('csvFile'),
+      sep: document.getElementById('sep'),
+      encoding: document.getElementById('encoding'),
+      btnDemo: document.getElementById('btnDemo'),
+      btnClearAll: document.getElementById('btnClearAll'),
+      colEAN: document.getElementById('colEAN'),
+      colDescripcion: document.getElementById('colDescripcion'),
+      colTalla: document.getElementById('colTalla'),
+      colEstado: document.getElementById('colEstado'),
+      colManga: document.getElementById('colManga'),
+      colUbicacion: document.getElementById('colUbicacion'),
+      btnApplyMapping: document.getElementById('btnApplyMapping'),
+      scanEAN: document.getElementById('scanEAN'),
+      scanRFID: document.getElementById('scanRFID'),
+      estadoManual: document.getElementById('estadoManual'),
+      ubicacionManual: document.getElementById('ubicacionManual'),
+      btnAssociate: document.getElementById('btnAssociate'),
+      btnAssociateSelected: document.getElementById('btnAssociateSelected'),
+      btnClearScan: document.getElementById('btnClearScan'),
+      associationStatus: document.getElementById('associationStatus'),
+      search: document.getElementById('search'),
+      filterEstado: document.getElementById('filterEstado'),
+      onlyNoRFID: document.getElementById('onlyNoRFID'),
+      tbody: document.getElementById('tbody'),
+      statBase: document.getElementById('statBase'),
+      statLinked: document.getElementById('statLinked'),
+      statUnlinked: document.getElementById('statUnlinked'),
+      statUnique: document.getElementById('statUnique'),
+      selectedInfo: document.getElementById('selectedInfo'),
+      btnExportCsv: document.getElementById('btnExportCsv'),
+      btnExportJson: document.getElementById('btnExportJson'),
+      btnImportJson: document.getElementById('btnImportJson'),
+      jsonFile: document.getElementById('jsonFile')
+    };
+
+    function saveLocal() {
+      localStorage.setItem('rfidVelneoState', JSON.stringify({
+        rawRows: state.rawRows,
+        headers: state.headers,
+        mappedRows: state.mappedRows,
+        mapping: state.mapping
+      }));
+    }
+
+    function loadLocal() {
+      const raw = localStorage.getItem('rfidVelneoState');
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        state.rawRows = Array.isArray(data.rawRows) ? data.rawRows : [];
+        state.headers = Array.isArray(data.headers) ? data.headers : [];
+        state.mappedRows = Array.isArray(data.mappedRows) ? data.mappedRows : [];
+        state.mapping = data.mapping || state.mapping;
+        fillHeaderSelects();
+        applySavedMappingToUI();
+        render();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function normalize(v) {
+      return String(v ?? '').trim();
+    }
+
+    function cleanRFID(v) {
+      return normalize(v).replace(/\s+/g, '').toUpperCase();
+    }
+
+    function detectSeparator(text) {
+      const firstLine = text.split(/\r?\n/).find(Boolean) || '';
+      const counts = {
+        ';': (firstLine.match(/;/g) || []).length,
+        ',': (firstLine.match(/,/g) || []).length,
+        '\t': (firstLine.match(/\t/g) || []).length,
+      };
+      let best = ';';
+      let bestN = -1;
+      for (const [k, n] of Object.entries(counts)) {
+        if (n > bestN) {
+          best = k;
+          bestN = n;
+        }
+      }
+      return best;
+    }
+
+    function parseCsv(text, separator) {
+      const sep = separator === 'auto' ? detectSeparator(text) : separator;
+      const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(line => line.trim() !== '');
+      if (!lines.length) return { headers: [], rows: [] };
+
+      function splitLine(line) {
+        const out = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          const next = line[i + 1];
+          if (char === '"') {
+            if (inQuotes && next === '"') {
+              current += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === sep && !inQuotes) {
+            out.push(current);
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        out.push(current);
+        return out.map(v => v.trim());
+      }
+
+      const headers = splitLine(lines[0]);
+      const rows = lines.slice(1).map(line => {
+        const parts = splitLine(line);
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = parts[i] ?? '');
+        return obj;
+      });
+
+      return { headers, rows };
+    }
+
+    function fillHeaderSelects() {
+      const selects = [els.colEAN, els.colDescripcion, els.colTalla, els.colEstado, els.colManga, els.colUbicacion];
+      selects.forEach(sel => {
+        sel.innerHTML = '<option value="">-- seleccionar --</option>' + state.headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+      });
+      autoDetectMapping();
+    }
+
+    function autoDetectMapping() {
+      const headersLower = state.headers.map(h => h.toLowerCase());
+      const findHeader = patterns => {
+        const index = headersLower.findIndex(h => patterns.some(p => h.includes(p)));
+        return index >= 0 ? state.headers[index] : '';
+      };
+      if (!els.colEAN.value) els.colEAN.value = findHeader(['ean', 'codigo barras', 'código barras', 'codigo', 'código']);
+      if (!els.colDescripcion.value) els.colDescripcion.value = findHeader(['descripcion', 'descripción', 'concepto', 'articulo', 'artículo', 'nombre']);
+      if (!els.colTalla.value) els.colTalla.value = findHeader(['talla']);
+      if (!els.colEstado.value) els.colEstado.value = findHeader(['estado', 'uso', 'calidad']);
+      if (!els.colManga.value) els.colManga.value = findHeader(['manga', 'largo']);
+      if (!els.colUbicacion.value) els.colUbicacion.value = findHeader(['ubicacion', 'ubicación', 'almacen', 'almacén', 'tienda']);
+    }
+
+    function applySavedMappingToUI() {
+      els.colEAN.value = state.mapping.ean || '';
+      els.colDescripcion.value = state.mapping.descripcion || '';
+      els.colTalla.value = state.mapping.talla || '';
+      els.colEstado.value = state.mapping.estado || '';
+      els.colManga.value = state.mapping.manga || '';
+      els.colUbicacion.value = state.mapping.ubicacion || '';
+    }
+
+    function mapRows() {
+      state.mapping = {
+        ean: els.colEAN.value,
+        descripcion: els.colDescripcion.value,
+        talla: els.colTalla.value,
+        estado: els.colEstado.value,
+        manga: els.colManga.value,
+        ubicacion: els.colUbicacion.value
+      };
+
+      state.mappedRows = state.rawRows.map((row, idx) => {
+        const existing = state.mappedRows[idx] || {};
+        return {
+          id: existing.id || crypto.randomUUID(),
+          baseIndex: idx,
+          ean: normalize(row[state.mapping.ean]),
+          descripcion: normalize(row[state.mapping.descripcion]),
+          talla: normalize(row[state.mapping.talla]),
+          estado: normalize(row[state.mapping.estado]).toLowerCase(),
+          manga: normalize(row[state.mapping.manga]),
+          ubicacion: normalize(row[state.mapping.ubicacion]),
+          rfid: existing.rfid || '',
+          usos: Number.isFinite(existing.usos) ? existing.usos : 0,
+          pedidoActual: existing.pedidoActual || ''
+        };
+      });
+
+      saveLocal();
+      render();
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setStatus(message, type = 'notice') {
+      els.associationStatus.className = `notice ${type}`;
+      els.associationStatus.textContent = message;
+      els.associationStatus.classList.remove('hidden');
+    }
+
+    function clearStatus() {
+      els.associationStatus.classList.add('hidden');
+      els.associationStatus.textContent = '';
+      els.associationStatus.className = 'notice hidden';
+    }
+
+    function getFilteredRows() {
+      const q = normalize(els.search.value).toLowerCase();
+      const estado = normalize(els.filterEstado.value).toLowerCase();
+      const rfidFilter = els.onlyNoRFID.value;
+
+      return state.mappedRows.filter(row => {
+        const hayTexto = !q || [row.ean, row.descripcion, row.talla, row.manga, row.estado, row.ubicacion, row.rfid].some(v => normalize(v).toLowerCase().includes(q));
+        const hayEstado = !estado || row.estado === estado;
+        const hayRFID = rfidFilter === 'all' || (rfidFilter === 'with' ? !!row.rfid : !row.rfid);
+        return hayTexto && hayEstado && hayRFID;
+      });
+    }
+
+    function render() {
+      const rows = getFilteredRows();
+      const linked = state.mappedRows.filter(r => r.rfid).length;
+      const unique = new Set(state.mappedRows.map(r => r.rfid).filter(Boolean)).size;
+
+      els.statBase.textContent = state.mappedRows.length;
+      els.statLinked.textContent = linked;
+      els.statUnlinked.textContent = Math.max(0, state.mappedRows.length - linked);
+      els.statUnique.textContent = unique;
+
+      const selected = state.mappedRows.find(r => r.id === state.selectedId);
+      els.selectedInfo.textContent = selected
+        ? `Seleccionado: ${selected.ean || '-'} ${selected.descripcion || ''}`
+        : 'Ningún registro seleccionado';
+
+      els.tbody.innerHTML = rows.map((row, idx) => {
+        const selectedClass = row.id === state.selectedId ? ' style="background:#eef2ff"' : '';
+        return `
+          <tr data-id="${row.id}"${selectedClass}>
+            <td>${idx + 1}</td>
+            <td class="mono">${escapeHtml(row.ean)}</td>
+            <td>${escapeHtml(row.descripcion)}</td>
+            <td>${escapeHtml(row.talla)}</td>
+            <td>${escapeHtml(row.manga)}</td>
+            <td>${row.estado ? `<span class="${row.estado === 'nuevo' ? 'tag-ok' : row.estado === 'usado' ? 'tag-warn' : ''}">${escapeHtml(row.estado)}</span>` : ''}</td>
+            <td>${escapeHtml(row.ubicacion)}</td>
+            <td class="mono">${row.rfid ? escapeHtml(row.rfid) : '<span class="tag-bad">SIN RFID</span>'}</td>
+            <td>
+              <button class="secondary small-btn" data-action="select" data-id="${row.id}">Seleccionar</button>
+              ${row.rfid ? `<button class="bad small-btn" data-action="unlink" data-id="${row.id}">Quitar</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function associateByEANAndRFID() {
+      clearStatus();
+      const ean = normalize(els.scanEAN.value);
+      const rfid = cleanRFID(els.scanRFID.value);
+      const estadoManual = normalize(els.estadoManual.value).toLowerCase();
+      const ubicacionManual = normalize(els.ubicacionManual.value);
+
+      if (!ean) {
+        setStatus('Falta el EAN.', 'danger');
+        return;
+      }
+      if (!rfid) {
+        setStatus('Falta el RFID.', 'danger');
+        return;
+      }
+
+      const alreadyRFID = state.mappedRows.find(r => r.rfid === rfid);
+      if (alreadyRFID) {
+        setStatus(`Ese RFID ya está asociado al EAN ${alreadyRFID.ean}.`, 'danger');
+        return;
+      }
+
+      const matches = state.mappedRows.filter(r => r.ean === ean && !r.rfid);
+      if (!matches.length) {
+        const existing = state.mappedRows.find(r => r.ean === ean);
+        if (existing) {
+          setStatus(`Ese EAN ya existe, pero no queda ninguna fila libre sin RFID. Puedes seleccionar una fila y usar "Asociar al registro seleccionado".`, 'warning');
+        } else {
+          setStatus('No se ha encontrado ese EAN en la base cargada.', 'danger');
+        }
+        return;
+      }
+
+      const row = matches[0];
+      row.rfid = rfid;
+      if (estadoManual) row.estado = estadoManual;
+      if (ubicacionManual) row.ubicacion = ubicacionManual;
+      state.selectedId = row.id;
+      saveLocal();
+      render();
+      setStatus(`RFID asociado correctamente a ${row.ean} - ${row.descripcion}.`, 'success');
+      els.scanRFID.value = '';
+      els.scanEAN.select();
+    }
+
+    function associateSelected() {
+      clearStatus();
+      const row = state.mappedRows.find(r => r.id === state.selectedId);
+      const rfid = cleanRFID(els.scanRFID.value);
+      const estadoManual = normalize(els.estadoManual.value).toLowerCase();
+      const ubicacionManual = normalize(els.ubicacionManual.value);
+
+      if (!row) {
+        setStatus('Selecciona primero una fila.', 'danger');
+        return;
+      }
+      if (!rfid) {
+        setStatus('Escanea primero el RFID.', 'danger');
+        return;
+      }
+      const alreadyRFID = state.mappedRows.find(r => r.rfid === rfid && r.id !== row.id);
+      if (alreadyRFID) {
+        setStatus(`Ese RFID ya está asociado al EAN ${alreadyRFID.ean}.`, 'danger');
+        return;
+      }
+      row.rfid = rfid;
+      if (estadoManual) row.estado = estadoManual;
+      if (ubicacionManual) row.ubicacion = ubicacionManual;
+      saveLocal();
+      render();
+      setStatus(`RFID asociado a la fila seleccionada.`, 'success');
+      els.scanRFID.value = '';
+    }
+
+    function unlink(id) {
+      const row = state.mappedRows.find(r => r.id === id);
+      if (!row) return;
+      if (!confirm(`¿Quitar RFID a ${row.ean} - ${row.descripcion}?`)) return;
+      row.rfid = '';
+      saveLocal();
+      render();
+    }
+
+    function exportCsv() {
+      const headers = ['EAN', 'DESCRIPCION', 'TALLA', 'MANGA', 'ESTADO', 'UBICACION', 'RFID', 'USOS', 'PEDIDO_ACTUAL'];
+      const lines = [headers.join(';')];
+      state.mappedRows.forEach(r => {
+        const values = [r.ean, r.descripcion, r.talla, r.manga, r.estado, r.ubicacion, r.rfid, r.usos, r.pedidoActual]
+          .map(v => `"${String(v ?? '').replace(/"/g, '""')}"`);
+        lines.push(values.join(';'));
+      });
+      downloadFile('asociaciones_rfid_velneo.csv', 'text/csv;charset=utf-8', '\uFEFF' + lines.join('\n'));
+    }
+
+    function exportJson() {
+      downloadFile('asociaciones_rfid_velneo.json', 'application/json;charset=utf-8', JSON.stringify({
+        rawRows: state.rawRows,
+        headers: state.headers,
+        mappedRows: state.mappedRows,
+        mapping: state.mapping
+      }, null, 2));
+    }
+
+    function downloadFile(filename, mime, content) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function loadDemo() {
+      const demo = `EAN;DESCRIPCION;TALLA;ESTADO;MANGA;UBICACION\n843000000001;CHQ N 999/3;48;nuevo;M;Hermosilla\n843000000001;CHQ N 999/3;48;usado;L;Hermosilla\n843000000002;CHQ N 999/3;50;nuevo;M;Almacen 34\n843000000003;CHALECO GRIS 999/3;48;usado;M;Valencia`;
+      const parsed = parseCsv(demo, ';');
+      state.headers = parsed.headers;
+      state.rawRows = parsed.rows;
+      fillHeaderSelects();
+      mapRows();
+      setStatus('Ejemplo cargado.', 'success');
+    }
+
+    function resetAll() {
+      if (!confirm('¿Borrar toda la información local cargada y asociaciones?')) return;
+      localStorage.removeItem('rfidVelneoState');
+      state.rawRows = [];
+      state.headers = [];
+      state.mappedRows = [];
+      state.selectedId = null;
+      [els.colEAN, els.colDescripcion, els.colTalla, els.colEstado, els.colManga, els.colUbicacion].forEach(sel => sel.innerHTML = '<option value="">-- seleccionar --</option>');
+      els.csvFile.value = '';
+      els.search.value = '';
+      els.scanEAN.value = '';
+      els.scanRFID.value = '';
+      clearStatus();
+      render();
+    }
+
+    els.csvFile.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const encoding = els.encoding.value;
+      const text = await file.text();
+      let parsed = parseCsv(text, els.sep.value);
+
+      if (!parsed.headers.length && encoding !== 'utf-8') {
+        const buffer = await file.arrayBuffer();
+        const decoder = new TextDecoder(encoding);
+        parsed = parseCsv(decoder.decode(buffer), els.sep.value);
+      }
+
+      state.headers = parsed.headers;
+      state.rawRows = parsed.rows;
+      state.mappedRows = [];
+      fillHeaderSelects();
+      mapRows();
+      setStatus(`CSV cargado: ${parsed.rows.length} filas.`, 'success');
+    });
+
+    els.btnApplyMapping.addEventListener('click', mapRows);
+    els.btnAssociate.addEventListener('click', associateByEANAndRFID);
+    els.btnAssociateSelected.addEventListener('click', associateSelected);
+    els.btnClearScan.addEventListener('click', () => {
+      els.scanEAN.value = '';
+      els.scanRFID.value = '';
+      clearStatus();
+      els.scanEAN.focus();
+    });
+    els.search.addEventListener('input', render);
+    els.filterEstado.addEventListener('change', render);
+    els.onlyNoRFID.addEventListener('change', render);
+    els.btnExportCsv.addEventListener('click', exportCsv);
+    els.btnExportJson.addEventListener('click', exportJson);
+    els.btnImportJson.addEventListener('click', () => els.jsonFile.click());
+    els.jsonFile.addEventListener('change', async e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const data = JSON.parse(await file.text());
+        state.rawRows = Array.isArray(data.rawRows) ? data.rawRows : [];
+        state.headers = Array.isArray(data.headers) ? data.headers : [];
+        state.mappedRows = Array.isArray(data.mappedRows) ? data.mappedRows : [];
+        state.mapping = data.mapping || state.mapping;
+        fillHeaderSelects();
+        applySavedMappingToUI();
+        saveLocal();
+        render();
+        setStatus('Backup JSON importado.', 'success');
+      } catch {
+        setStatus('No se pudo importar el JSON.', 'danger');
+      }
+    });
+    els.btnDemo.addEventListener('click', loadDemo);
+    els.btnClearAll.addEventListener('click', resetAll);
+
+    els.tbody.addEventListener('click', e => {
+      const button = e.target.closest('button[data-action]');
+      const tr = e.target.closest('tr[data-id]');
+      if (button) {
+        const action = button.dataset.action;
+        const id = button.dataset.id;
+        if (action === 'select') {
+          state.selectedId = id;
+          render();
+        } else if (action === 'unlink') {
+          unlink(id);
+        }
+        return;
+      }
+      if (tr) {
+        state.selectedId = tr.dataset.id;
+        render();
+      }
+    });
+
+    function handleScanInput(inputEl, callback) {
+      let timer;
+      inputEl.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(callback, 80);
+      });
+      inputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          callback();
+        }
+      });
+    }
+
+    handleScanInput(els.scanRFID, () => {
+      const rfid = cleanRFID(els.scanRFID.value);
+      if (!rfid) return;
+      if (state.selectedId) {
+        return;
+      }
+      const existing = state.mappedRows.find(r => r.rfid === rfid);
+      if (existing) {
+        state.selectedId = existing.id;
+        render();
+        setStatus(`RFID ya existente. Registro localizado y seleccionado.`, 'warning');
+      }
+    });
+
+    handleScanInput(els.scanEAN, () => {
+      const ean = normalize(els.scanEAN.value);
+      if (!ean) return;
+      const match = state.mappedRows.find(r => r.ean === ean && !r.rfid) || state.mappedRows.find(r => r.ean === ean);
+      if (match) {
+        state.selectedId = match.id;
+        render();
+      }
+    });
+
+    loadLocal();
+    render();
+  </script>
+</body>
+</html>
