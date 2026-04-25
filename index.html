@@ -1,443 +1,540 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Alta RFID Velneo</title>
   <style>
-    :root {
-      --bg: #f5f7fb;
-      --card: #fff;
-      --text: #102033;
-      --muted: #64748b;
-      --line: #dbe3ee;
-      --blue: #2563eb;
-      --green: #16a34a;
-      --red: #dc2626;
-      --orange: #ea580c;
+    :root{
+      --bg:#f5f7fb;--card:#fff;--text:#102033;--muted:#64748b;--line:#dbe3ee;
+      --blue:#2563eb;--green:#16a34a;--red:#dc2626;--orange:#ea580c;
     }
-
-    * {
-      box-sizing: border-box
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;font-size:18px}
+    .wrap{max-width:1200px;margin:0 auto;padding:10px}
+    h1{font-size:24px;margin:8px 0}
+    h2{font-size:22px;margin:0 0 10px}
+    .grid{display:grid;grid-template-columns:390px 1fr;gap:12px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+    label{display:block;font-weight:800;color:#334155;margin:10px 0 6px;font-size:17px}
+    input,select,textarea,button{font:inherit}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:21px;background:#fff}
+    input[readonly]{background:#f8fafc}
+    textarea{min-height:75px;resize:vertical}
+    button{
+      width:100%;border:0;border-radius:12px;padding:15px 12px;font-weight:900;
+      font-size:21px;min-height:58px;color:white;background:var(--blue);margin-top:8px;
     }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 18px
+    button.secondary{background:#e5e7eb;color:#111827}
+    button.good{background:var(--green)}
+    button.bad{background:var(--red)}
+    button.orange{background:var(--orange)}
+    .notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:12px;padding:12px;margin:8px 0;line-height:1.35}
+    .success{background:#ecfdf5;color:#166534;border-color:#bbf7d0}
+    .warning{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+    .danger{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+    .bigbox{font-size:22px;font-weight:800}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .hidden{display:none!important}
+    .mono{font-family:Consolas,monospace}
+    .top-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .top-buttons button{margin:0}
+    .candidate{
+      display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border-radius:12px;
+      border:1px solid var(--line);background:#f8fafc;color:#111827;font-size:18px;line-height:1.35;
     }
-
-    .wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 10px
-    }
-
-    h1 {
-      font-size: 24px;
-      margin: 8px 0
-    }
-
-    h2 {
-      font-size: 22px;
-      margin: 0 0 10px
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 390px 1fr;
-      gap: 12px
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 10px
-    }
-
-    label {
-      display: block;
-      font-weight: 800;
-      color: #334155;
-      margin: 10px 0 6px;
-      font-size: 17px
-    }
-
-    input,
-    select,
-    textarea,
-    button {
-      font: inherit
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px;
-      font-size: 21px;
-      background: #fff
-    }
-
-    input[readonly] {
-      background: #f8fafc
-    }
-
-    textarea {
-      min-height: 75px;
-      resize: vertical
-    }
-
-    button {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      padding: 15px 12px;
-      font-weight: 900;
-      font-size: 21px;
-      min-height: 58px;
-      color: white;
-      background: var(--blue);
-      margin-top: 8px
-    }
-
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827
-    }
-
-    button.good {
-      background: var(--green)
-    }
-
-    button.bad {
-      background: var(--red)
-    }
-
-    .row {
-      display: flex;
-      gap: 8px
-    }
-
-    .row button {
-      flex: 1
-    }
-
-    .notice {
-      border: 1px solid #bfdbfe;
-      background: #eff6ff;
-      color: #1d4ed8;
-      border-radius: 12px;
-      padding: 12px;
-      margin: 8px 0;
-      line-height: 1.35
-    }
-
-    .success {
-      background: #ecfdf5;
-      color: #166534;
-      border-color: #bbf7d0
-    }
-
-    .warning {
-      background: #fff7ed;
-      color: #9a3412;
-      border-color: #fed7aa
-    }
-
-    .danger {
-      background: #fef2f2;
-      color: #991b1b;
-      border-color: #fecaca
-    }
-
-    .bigbox {
-      font-size: 22px;
-      font-weight: 800
-    }
-
-    .split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px
-    }
-
-    .hidden {
-      display: none !important
-    }
-
-    .mono {
-      font-family: Consolas, monospace
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      font-size: 14px;
-      min-width: 900px
-    }
-
-    th,
-    td {
-      border-bottom: 1px solid var(--line);
-      padding: 8px;
-      text-align: left
-    }
-
-    th {
-      background: #f8fafc;
-      color: #64748b;
-      position: sticky;
-      top: 0
-    }
-
-    .table-wrap {
-      max-height: 55vh;
-      overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 12px
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px
-    }
-
-    .stat {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px
-    }
-
-    .stat b {
-      font-size: 24px
-    }
-
-    .candidate {
-      display: block;
-      width: 100%;
-      text-align: left;
-      margin: 8px 0;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #f8fafc;
-      color: #111827;
-      font-size: 18px;
-      line-height: 1.35
-    }
-
-    .top-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 10px
-    }
-
-    .top-buttons button {
-      margin: 0
-    }
-
-    @media(max-width:760px) {
-      body {
-        background: #fff;
-        font-size: 20px
-      }
-
-      .wrap {
-        padding: 6px
-      }
-
-      h1 {
-        font-size: 22px
-      }
-
-      .grid {
-        display: block
-      }
-
-      .desktopOnly {
-        display: none !important
-      }
-
-      .card {
-        box-shadow: none;
-        padding: 10px;
-        border-radius: 12px
-      }
-
-      input,
-      select,
-      textarea {
-        font-size: 24px;
-        padding: 16px;
-        min-height: 62px
-      }
-
-      button {
-        font-size: 23px;
-        min-height: 64px
-      }
-
-      label {
-        font-size: 18px
-      }
-
-      .notice {
-        font-size: 20px
-      }
-
-      .bigbox {
-        font-size: 23px
-      }
-
-      .split {
-        grid-template-columns: 1fr 1fr
-      }
-
-      #scanEAN,
-      #scanRFID,
-      #medidaManual,
-      #buscarModelo,
-      #buscarRFID {
-        font-size: 28px;
-        font-weight: 900
-      }
+    table{width:100%;border-collapse:collapse;background:white;font-size:14px;min-width:900px}
+    th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left}
+    th{background:#f8fafc;color:#64748b;position:sticky;top:0}
+    .table-wrap{max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:12px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px}
+    .stat b{font-size:24px}
+    @media(max-width:760px){
+      body{background:#fff;font-size:20px}
+      .wrap{padding:6px}
+      h1{font-size:22px}
+      .grid{display:block}
+      .desktopOnly{display:none!important}
+      .card{box-shadow:none;padding:10px;border-radius:12px}
+      input,select,textarea{font-size:24px;padding:16px;min-height:62px}
+      button{font-size:23px;min-height:64px}
+      label{font-size:18px}
+      .notice{font-size:20px}
+      .bigbox{font-size:23px}
+      .split{grid-template-columns:1fr 1fr}
+      #scanEAN,#scanRFID,#medidaManual,#buscarEAN,#buscarModelo,#buscarRFID{font-size:28px;font-weight:900}
     }
   </style>
 </head>
-
 <body>
-  <div class="wrap">
-    <h1>Alta RFID prendas Velneo</h1>
-    <div class="top-buttons"><button id="modeAlta" class="good">ALTA</button><button id="modeBuscar"
-        class="secondary">LOCALIZAR</button></div>
-    <div class="grid">
-      <div>
-        <div class="card desktopOnly">
-          <h2>Catálogo</h2>
-          <div id="catalogStatus" class="notice warning">Cargando catálogo...</div><label>Archivo CSV
-            manual</label><input id="csvFile" type="file" accept=".csv,text/csv" />
-          <div class="split">
-            <div><label>Separador</label><select id="sep">
-                <option value="auto">Auto</option>
-                <option value=";">;</option>
-                <option value=",">,</option>
-                <option value="\t">Tab</option>
-              </select></div>
-            <div><label>Codificación</label><select id="encoding">
-                <option value="utf-8">UTF-8</option>
-                <option value="iso-8859-1">ISO-8859-1</option>
-                <option value="windows-1252">Windows-1252</option>
-              </select></div>
-          </div><button id="btnExportCsv">Exportar asociaciones CSV</button><button id="btnClearAll" class="bad">Borrar
-            asociaciones locales</button>
-        </div>
-        <div class="card" id="altaPanel">
-          <h2>Alta rápida</h2>
-          <div class="notice success">Escanea EAN → rellena atributos → escanea RFID → guardar.</div><label>Escanear
-            EAN</label><input id="scanEAN" type="text" inputmode="none" autocomplete="off"
-            placeholder="Escanea EAN de Velneo" />
-          <div id="productBox" class="notice warning bigbox">Ningún EAN seleccionado.</div>
-          <div class="split">
-            <div><label>Tipo medida</label><input id="tipoMedidaManual" type="text" readonly placeholder="Auto" /></div>
-            <div><label>Medida</label><input id="medidaManual" type="number" inputmode="numeric"
-                placeholder="62 / 102" /></div>
+<div class="wrap">
+  <h1>Alta RFID prendas Velneo</h1>
+
+  <div class="top-buttons">
+    <button id="modeAlta" class="good">ALTA</button>
+    <button id="modeBuscar" class="secondary">LOCALIZAR</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card desktopOnly">
+        <h2>Catálogo</h2>
+        <div id="catalogStatus" class="notice warning">Cargando catálogo...</div>
+        <label>Archivo CSV manual</label>
+        <input id="csvFile" type="file" accept=".csv,text/csv" />
+        <button id="btnExportCsv">Exportar asociaciones CSV</button>
+        <button id="btnClearAll" class="bad">Borrar asociaciones locales</button>
+      </div>
+
+      <div class="card" id="altaPanel">
+        <h2>Alta rápida</h2>
+        <div class="notice success">Escanea EAN → rellena atributos → escanea RFID → guardar.</div>
+
+        <label>Escanear EAN</label>
+        <input id="scanEAN" type="text" inputmode="none" autocomplete="off" placeholder="Escanea EAN de Velneo" />
+
+        <div id="productBox" class="notice warning bigbox">Ningún EAN seleccionado.</div>
+
+        <div class="split">
+          <div>
+            <label>Tipo medida</label>
+            <input id="tipoMedidaManual" type="text" readonly placeholder="Auto" />
           </div>
-          <div class="split">
-            <div><label>Estado</label><select id="estadoManual">
-                <option value="EST">EST</option>
-                <option value="SEM">SEM</option>
-                <option value="BAS">BAS</option>
-              </select></div>
-            <div><label>Ubicación</label><select id="ubicacionManual">
-                <option value="01">01</option>
-                <option value="02">02</option>
-                <option value="03">03</option>
-                <option value="04">04</option>
-                <option value="05">05</option>
-                <option value="06">06</option>
-                <option value="07">07</option>
-                <option value="99">99</option>
-              </select></div>
-          </div><label>Nota</label><textarea id="notaManual"
-            placeholder="arreglada, da menos talla, pequeño defecto..."></textarea><label>Escanear RFID</label><input
-            id="scanRFID" type="text" inputmode="none" autocomplete="off"
-            placeholder="Escanea RFID para guardar" /><button id="btnGuardarAlta" class="good">Guardar EAN +
-            RFID</button><button id="btnNueva" class="secondary">Nueva prenda</button>
-          <div id="statusAlta" class="notice hidden"></div>
+          <div>
+            <label>Medida</label>
+            <input id="medidaManual" type="number" inputmode="numeric" placeholder="62 / 102" />
+          </div>
         </div>
-        <div class="card hidden" id="localizarPanel">
-          <h2>Localizar prenda</h2>
-          <div class="notice success">Busca candidato, selecciónalo y luego pasa el lector RFID por el perchero.</div>
-          <label>Buscar prenda</label><input id="buscarModelo" type="text" inputmode="none" autocomplete="off"
-            placeholder="EAN o CHQ C 999/3 48" /><button id="btnBuscarCandidatos" class="good">Buscar
-            candidatos</button>
-          <div id="listaCandidatos" class="notice warning">Busca por EAN, modelo, familia o talla.</div><label>RFID
-            objetivo</label><input id="rfidObjetivo" readonly placeholder="Selecciona candidato" /><label>Lectura
-            RFID</label><input id="buscarRFID" type="text" inputmode="none" autocomplete="off"
-            placeholder="Pulsa gatillo y mueve la pistola" />
-          <div id="resultadoLocalizar" class="notice warning">Esperando selección...</div>
+
+        <div class="split">
+          <div>
+            <label>Estado</label>
+            <select id="estadoManual">
+              <option value="EST">EST</option>
+              <option value="SEM">SEM</option>
+              <option value="BAS">BAS</option>
+            </select>
+          </div>
+          <div>
+            <label>Ubicación</label>
+            <select id="ubicacionManual">
+              <option value="01">01</option><option value="02">02</option><option value="03">03</option>
+              <option value="04">04</option><option value="05">05</option><option value="06">06</option>
+              <option value="07">07</option><option value="99">99</option>
+            </select>
+          </div>
+        </div>
+
+        <label>Nota</label>
+        <textarea id="notaManual" placeholder="arreglada, da menos talla, pequeño defecto..."></textarea>
+
+        <label>Escanear RFID</label>
+        <input id="scanRFID" type="text" inputmode="none" autocomplete="off" placeholder="Escanea RFID para guardar" />
+
+        <button id="btnGuardarAlta" class="good">Guardar EAN + RFID</button>
+        <button id="btnNueva" class="secondary">Nueva prenda</button>
+
+        <div id="statusAlta" class="notice hidden"></div>
+      </div>
+
+      <div class="card hidden" id="localizarPanel">
+        <h2>Localizar prenda</h2>
+
+        <button id="btnAbrirBusqueda" class="good">BUSCAR</button>
+
+        <div id="tipoBusquedaPanel" class="hidden">
+          <div class="split">
+            <button id="btnBuscarPorEAN" class="orange">POR EAN</button>
+            <button id="btnBuscarPorModelo" class="orange">POR MODELO</button>
+          </div>
+        </div>
+
+        <div id="busquedaEANPanel" class="hidden">
+          <label>Escanear EAN</label>
+          <input id="buscarEAN" type="text" inputmode="none" autocomplete="off" placeholder="Escanea EAN" />
+        </div>
+
+        <div id="busquedaModeloPanel" class="hidden">
+          <label>Escribir modelo / familia / talla</label>
+          <input id="buscarModelo" type="text" inputmode="text" autocomplete="off" placeholder="Ej. CHQ C 999/3 48" />
+          <button id="btnBuscarCandidatos" class="good">Buscar candidatos</button>
+        </div>
+
+        <div id="listaCandidatos" class="notice warning">Pulsa BUSCAR para empezar.</div>
+
+        <label>RFID objetivo</label>
+        <input id="rfidObjetivo" readonly placeholder="Selecciona candidato" />
+
+        <label>Lectura RFID</label>
+        <input id="buscarRFID" type="text" inputmode="none" autocomplete="off" placeholder="Pulsa gatillo y mueve la pistola" />
+
+        <div id="resultadoLocalizar" class="notice warning">Esperando selección...</div>
+      </div>
+    </div>
+
+    <div class="desktopOnly">
+      <div class="card">
+        <div class="stats">
+          <div class="stat">Filas<br><b id="statBase">0</b></div>
+          <div class="stat">Con RFID<br><b id="statLinked">0</b></div>
+          <div class="stat">Sin RFID<br><b id="statUnlinked">0</b></div>
+          <div class="stat">RFID únicos<br><b id="statUnique">0</b></div>
         </div>
       </div>
-      <div class="desktopOnly">
-        <div class="card">
-          <div class="stats">
-            <div class="stat">Filas<br><b id="statBase">0</b></div>
-            <div class="stat">Con RFID<br><b id="statLinked">0</b></div>
-            <div class="stat">Sin RFID<br><b id="statUnlinked">0</b></div>
-            <div class="stat">RFID únicos<br><b id="statUnique">0</b></div>
-          </div>
-        </div>
-        <div class="card">
-          <h2>Base de trabajo</h2><label>Buscar</label><input id="search" type="search"
-            placeholder="EAN, descripción, talla, RFID..." />
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>EAN</th>
-                  <th>Descripción</th>
-                  <th>Talla</th>
-                  <th>Medida</th>
-                  <th>Estado</th>
-                  <th>Ubic.</th>
-                  <th>Nota</th>
-                  <th>RFID</th>
-                </tr>
-              </thead>
-              <tbody id="tbody"></tbody>
-            </table>
-          </div>
+
+      <div class="card">
+        <h2>Base de trabajo</h2>
+        <label>Buscar</label>
+        <input id="search" type="search" placeholder="EAN, descripción, talla, RFID..." />
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>EAN</th><th>Descripción</th><th>Talla</th><th>Medida</th>
+                <th>Estado</th><th>Ubic.</th><th>Nota</th><th>RFID</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
   </div>
-  <script>
-    const state = { rows: [], selectedRow: null, selectedTarget: null }; const $ = id => document.getElementById(id); const els = { modeAlta: $('modeAlta'), modeBuscar: $('modeBuscar'), catalogStatus: $('catalogStatus'), csvFile: $('csvFile'), sep: $('sep'), scanEAN: $('scanEAN'), scanRFID: $('scanRFID'), productBox: $('productBox'), tipoMedidaManual: $('tipoMedidaManual'), medidaManual: $('medidaManual'), estadoManual: $('estadoManual'), ubicacionManual: $('ubicacionManual'), notaManual: $('notaManual'), btnGuardarAlta: $('btnGuardarAlta'), btnNueva: $('btnNueva'), statusAlta: $('statusAlta'), altaPanel: $('altaPanel'), localizarPanel: $('localizarPanel'), buscarModelo: $('buscarModelo'), btnBuscarCandidatos: $('btnBuscarCandidatos'), listaCandidatos: $('listaCandidatos'), rfidObjetivo: $('rfidObjetivo'), buscarRFID: $('buscarRFID'), resultadoLocalizar: $('resultadoLocalizar'), tbody: $('tbody'), search: $('search'), statBase: $('statBase'), statLinked: $('statLinked'), statUnlinked: $('statUnlinked'), statUnique: $('statUnique'), btnExportCsv: $('btnExportCsv'), btnClearAll: $('btnClearAll') };
-    function normalize(v) { return String(v ?? '').trim() } function cleanRFID(v) { return normalize(v).replace(/\s+/g, '').toUpperCase() } function escapeHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;') } function extractEAN(v) { let s = String(v || '').toUpperCase(); s = s.replace(/E[0-9A-F]{16,}/g, ' '); const m = s.match(/[0-9]{8,14}/g) || []; return m[0] || '' } function extractRFID(v) { const s = String(v || '').toUpperCase().replace(/[^0-9A-FE]/g, ''); const m = s.match(/E[0-9A-F]{16,}/); return m ? cleanRFID(m[0]) : '' }
-    function detectSeparator(text) { const f = text.split(/\r?\n/).find(Boolean) || ''; const c = { ';': (f.match(/;/g) || []).length, ',': (f.match(/,/g) || []).length, '\t': (f.match(/\t/g) || []).length }; return Object.entries(c).sort((a, b) => b[1] - a[1])[0][0] } function parseCSV(text, sepOpt = 'auto') { const sep = sepOpt === 'auto' ? detectSeparator(text) : sepOpt; const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim() !== ''); if (!lines.length) return []; function split(line) { const out = []; let cur = '', q = false; for (let i = 0; i < line.length; i++) { const c = line[i], n = line[i + 1]; if (c === '"') { if (q && n === '"') { cur += '"'; i++ } else q = !q } else if (c === sep && !q) { out.push(cur); cur = '' } else cur += c } out.push(cur); return out.map(x => x.trim()) } const headers = split(lines[0]).map(h => h.toLowerCase().trim()); return lines.slice(1).map((line, idx) => { const p = split(line), o = {}; headers.forEach((h, i) => o[h] = p[i] ?? ''); return normalizeRow(o, idx) }) } function normalizeRow(o, idx) { const d = o.descripcion || o['descripción'] || o.concepto || o.nombre || ''; return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + idx), baseIndex: idx, codigo: o.codigo || '', ean: normalize(o.ean || ''), descripcion: normalize(d), talla: normalize(o.talla || ''), rfid: '', tipoMedida: '', medida: '', estado: '', ubicacion: '', nota: '', usos: 0 } }
-    function saveLocal() { localStorage.setItem('rfidAsociacionesV2', JSON.stringify(state.rows.map(r => ({ ean: r.ean, descripcion: r.descripcion, talla: r.talla, rfid: r.rfid, tipoMedida: r.tipoMedida, medida: r.medida, estado: r.estado, ubicacion: r.ubicacion, nota: r.nota, usos: r.usos })))) } function mergeSaved() { let s = []; try { s = JSON.parse(localStorage.getItem('rfidAsociacionesV2') || '[]') } catch { } if (!Array.isArray(s)) return; const used = new Set(); s.forEach(x => { const row = state.rows.find((r, i) => !used.has(i) && r.ean === x.ean && r.descripcion === x.descripcion && r.talla === x.talla && !r.rfid); if (row) { Object.assign(row, { rfid: x.rfid || '', tipoMedida: x.tipoMedida || '', medida: x.medida || '', estado: x.estado || '', ubicacion: x.ubicacion || '', nota: x.nota || '', usos: x.usos || 0 }); used.add(state.rows.indexOf(row)) } }) } function tipoMedida(desc) { const s = String(desc || '').toUpperCase(); if (s.startsWith('PAN')) return 'LARGO'; if (s.startsWith('CHQ') || s.startsWith('AME') || s.startsWith('ESM') || s.startsWith('FRA')) return 'MANGA'; return 'MEDIDA' }
-    async function loadCatalogAuto() { try { const res = await fetch('catalogo.csv', { cache: 'no-store' }); if (!res.ok) throw new Error(); const text = await res.text(); state.rows = parseCSV(text, 'auto'); mergeSaved(); els.catalogStatus.className = 'notice success'; els.catalogStatus.textContent = `Catálogo cargado automáticamente desde catalogo.csv: ${state.rows.length} filas.`; render() } catch (e) { els.catalogStatus.className = 'notice warning'; els.catalogStatus.textContent = 'No se pudo cargar catalogo.csv. Puedes cargar CSV manual.'; render() } }
-    function render() { const linked = state.rows.filter(r => r.rfid).length, unique = new Set(state.rows.map(r => r.rfid).filter(Boolean)).size; els.statBase.textContent = state.rows.length; els.statLinked.textContent = linked; els.statUnlinked.textContent = state.rows.length - linked; els.statUnique.textContent = unique; const q = normalize(els.search?.value).toLowerCase(); const rows = state.rows.filter(r => !q || `${r.ean} ${r.descripcion} ${r.talla} ${r.rfid} ${r.estado} ${r.ubicacion} ${r.nota}`.toLowerCase().includes(q)).slice(0, 300); els.tbody.innerHTML = rows.map((r, i) => `<tr><td>${i + 1}</td><td class="mono">${escapeHtml(r.ean)}</td><td>${escapeHtml(r.descripcion)}</td><td>${escapeHtml(r.talla)}</td><td>${escapeHtml(r.tipoMedida)} ${escapeHtml(r.medida)}</td><td>${escapeHtml(r.estado)}</td><td>${escapeHtml(r.ubicacion)}</td><td>${escapeHtml(r.nota)}</td><td class="mono">${r.rfid ? escapeHtml(r.rfid) : '<span style="color:#dc2626;font-weight:800">SIN RFID</span>'}</td></tr>`).join('') }
-    function setStatus(el, msg, type = 'notice') { el.className = `notice ${type}`; el.textContent = msg; el.classList.remove('hidden') } function selectByEAN(ean) { const row = state.rows.find(r => r.ean === ean && !r.rfid) || state.rows.find(r => r.ean === ean); if (!row) { state.selectedRow = null; els.productBox.className = 'notice danger bigbox'; els.productBox.textContent = `EAN no encontrado: ${ean}`; return } state.selectedRow = row; const tm = tipoMedida(row.descripcion); els.tipoMedidaManual.value = tm; els.productBox.className = 'notice success bigbox'; els.productBox.innerHTML = `<b>${escapeHtml(row.descripcion)} T${escapeHtml(row.talla)}</b><br>EAN: <span class="mono">${escapeHtml(row.ean)}</span><br>Tipo medida: <b>${tm}</b>`; els.medidaManual.focus() }
-    function guardarAlta() { const ean = extractEAN(els.scanEAN.value), rfid = extractRFID(els.scanRFID.value); if (!ean) return setStatus(els.statusAlta, 'Falta EAN.', 'danger'); if (!rfid) return setStatus(els.statusAlta, 'Falta RFID.', 'danger'); const already = state.rows.find(r => r.rfid === rfid); if (already) return setStatus(els.statusAlta, `RFID ya asociado a ${already.descripcion} T${already.talla}.`, 'danger'); let row = state.selectedRow && state.selectedRow.ean === ean && !state.selectedRow.rfid ? state.selectedRow : state.rows.find(r => r.ean === ean && !r.rfid); if (!row) return setStatus(els.statusAlta, 'No queda fila libre para ese EAN o no existe.', 'danger'); row.rfid = rfid; row.tipoMedida = els.tipoMedidaManual.value || tipoMedida(row.descripcion); row.medida = normalize(els.medidaManual.value); row.estado = normalize(els.estadoManual.value); row.ubicacion = normalize(els.ubicacionManual.value); row.nota = normalize(els.notaManual.value); saveLocal(); render(); setStatus(els.statusAlta, `Guardado: ${row.descripcion} T${row.talla} → ${rfid}`, 'success'); nuevaPrenda() } function nuevaPrenda() { els.scanEAN.value = ''; els.scanRFID.value = ''; els.medidaManual.value = ''; els.notaManual.value = ''; state.selectedRow = null; els.productBox.className = 'notice warning bigbox'; els.productBox.textContent = 'Ningún EAN seleccionado.'; els.tipoMedidaManual.value = ''; els.scanEAN.focus() }
-    function buscarCandidatos() { const qRaw = normalize(els.buscarModelo.value), q = qRaw.toLowerCase(), ean = extractEAN(qRaw); if (!qRaw) { els.listaCandidatos.className = 'notice warning'; els.listaCandidatos.textContent = 'Escanea un EAN o escribe modelo/familia/talla.'; return } const words = q.split(/\s+/).filter(Boolean); const rows = state.rows.filter(r => { if (!r.rfid) return false; if (ean && r.ean === ean) return true; const txt = `${r.ean} ${r.descripcion} ${r.talla} ${r.tipoMedida} ${r.medida} ${r.estado} ${r.ubicacion} ${r.nota}`.toLowerCase(); return words.every(w => txt.includes(w)) }).slice(0, 40); if (!rows.length) { els.listaCandidatos.className = 'notice danger'; els.listaCandidatos.textContent = 'No hay candidatos dados de alta.'; return } els.listaCandidatos.className = 'notice'; els.listaCandidatos.innerHTML = `<b>${rows.length} candidato(s). Pulsa el que quieres localizar:</b>` + rows.map(r => `<button class="candidate" data-rfid="${escapeHtml(r.rfid)}"><b>${escapeHtml(r.descripcion)} T${escapeHtml(r.talla)}</b><br>${escapeHtml(r.tipoMedida)} ${escapeHtml(r.medida)} · ${escapeHtml(r.estado)} · Ub ${escapeHtml(r.ubicacion)}<br><span class="mono">${escapeHtml(r.rfid)}</span></button>`).join('') }
-    function selectTarget(rfid) { const row = state.rows.find(r => r.rfid === rfid); state.selectedTarget = row || null; els.rfidObjetivo.value = rfid; els.resultadoLocalizar.className = 'notice warning'; els.resultadoLocalizar.textContent = row ? `Objetivo seleccionado: ${row.descripcion} T${row.talla}. Ahora mueve la pistola.` : 'Objetivo seleccionado.'; els.buscarRFID.value = ''; els.buscarRFID.focus() } function checkLocalizar() { const target = cleanRFID(els.rfidObjetivo.value), seen = extractRFID(els.buscarRFID.value); if (!target || !seen) return; els.buscarRFID.value = seen; if (seen === target) { els.resultadoLocalizar.className = 'notice success'; els.resultadoLocalizar.textContent = '✅ ENCONTRADO. Ese es el RFID objetivo.'; try { navigator.vibrate?.([300, 100, 300]) } catch { } } else { els.resultadoLocalizar.className = 'notice warning'; els.resultadoLocalizar.textContent = `Leído ${seen}, todavía no es el objetivo.` } }
-    function setMode(mode) { if (mode === 'alta') { els.altaPanel.classList.remove('hidden'); els.localizarPanel.classList.add('hidden'); els.modeAlta.className = 'good'; els.modeBuscar.className = 'secondary'; setTimeout(() => els.scanEAN.focus(), 100) } else { els.altaPanel.classList.add('hidden'); els.localizarPanel.classList.remove('hidden'); els.modeAlta.className = 'secondary'; els.modeBuscar.className = 'good'; els.listaCandidatos.className = 'notice warning'; els.listaCandidatos.textContent = 'Busca por EAN, modelo, familia o talla.'; els.resultadoLocalizar.className = 'notice warning'; els.resultadoLocalizar.textContent = 'Esperando selección...'; setTimeout(() => els.buscarModelo.focus(), 100) } } function exportCsv() { const headers = ['EAN', 'DESCRIPCION', 'TALLA', 'TIPO_MEDIDA', 'MEDIDA', 'ESTADO', 'UBICACION', 'NOTA', 'RFID', 'USOS']; const lines = [headers.join(';')]; state.rows.filter(r => r.rfid).forEach(r => { const vals = [r.ean, r.descripcion, r.talla, r.tipoMedida, r.medida, r.estado, r.ubicacion, r.nota, r.rfid, r.usos].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`); lines.push(vals.join(';')) }); const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'asociaciones_rfid_velneo.csv'; a.click(); URL.revokeObjectURL(a.href) } function debounce(fn, ms = 80) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms) } }
-    els.scanEAN.addEventListener('input', debounce(() => { const ean = extractEAN(els.scanEAN.value); if (ean) { els.scanEAN.value = ean; selectByEAN(ean) } })); els.scanEAN.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const ean = extractEAN(els.scanEAN.value); if (ean) selectByEAN(ean) } }); els.scanRFID.addEventListener('input', debounce(() => { const rfid = extractRFID(els.scanRFID.value); if (rfid) { els.scanRFID.value = rfid; guardarAlta() } })); els.btnGuardarAlta.addEventListener('click', guardarAlta); els.btnNueva.addEventListener('click', nuevaPrenda); els.modeAlta.addEventListener('click', () => setMode('alta')); els.modeBuscar.addEventListener('click', () => setMode('buscar')); els.btnBuscarCandidatos.addEventListener('click', buscarCandidatos); els.buscarModelo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscarCandidatos() } }); els.buscarModelo.addEventListener('input', debounce(() => { if (normalize(els.buscarModelo.value).length >= 3) buscarCandidatos() }, 300)); els.listaCandidatos.addEventListener('click', e => { const btn = e.target.closest('[data-rfid]'); if (btn) selectTarget(btn.dataset.rfid) }); els.buscarRFID.addEventListener('input', debounce(checkLocalizar)); els.search?.addEventListener('input', render); els.btnExportCsv.addEventListener('click', exportCsv); els.btnClearAll.addEventListener('click', () => { if (confirm('¿Borrar asociaciones guardadas en este navegador?')) { localStorage.removeItem('rfidAsociacionesV2'); location.reload() } }); els.csvFile.addEventListener('change', async e => { const file = e.target.files?.[0]; if (!file) return; const text = await file.text(); state.rows = parseCSV(text, els.sep.value); mergeSaved(); els.catalogStatus.className = 'notice success'; els.catalogStatus.textContent = `CSV cargado manualmente: ${state.rows.length} filas.`; render() }); loadCatalogAuto(); setMode('alta');
-  </script>
-</body>
+</div>
 
+<script>
+const state = { rows: [], selectedRow: null, selectedTarget: null };
+const $ = id => document.getElementById(id);
+
+const els = {
+  modeAlta:$('modeAlta'), modeBuscar:$('modeBuscar'),
+  catalogStatus:$('catalogStatus'), csvFile:$('csvFile'),
+  scanEAN:$('scanEAN'), scanRFID:$('scanRFID'), productBox:$('productBox'),
+  tipoMedidaManual:$('tipoMedidaManual'), medidaManual:$('medidaManual'),
+  estadoManual:$('estadoManual'), ubicacionManual:$('ubicacionManual'), notaManual:$('notaManual'),
+  btnGuardarAlta:$('btnGuardarAlta'), btnNueva:$('btnNueva'), statusAlta:$('statusAlta'),
+  altaPanel:$('altaPanel'), localizarPanel:$('localizarPanel'),
+  btnAbrirBusqueda:$('btnAbrirBusqueda'), tipoBusquedaPanel:$('tipoBusquedaPanel'),
+  btnBuscarPorEAN:$('btnBuscarPorEAN'), btnBuscarPorModelo:$('btnBuscarPorModelo'),
+  busquedaEANPanel:$('busquedaEANPanel'), busquedaModeloPanel:$('busquedaModeloPanel'),
+  buscarEAN:$('buscarEAN'), buscarModelo:$('buscarModelo'), btnBuscarCandidatos:$('btnBuscarCandidatos'),
+  listaCandidatos:$('listaCandidatos'), rfidObjetivo:$('rfidObjetivo'),
+  buscarRFID:$('buscarRFID'), resultadoLocalizar:$('resultadoLocalizar'),
+  tbody:$('tbody'), search:$('search'),
+  statBase:$('statBase'), statLinked:$('statLinked'), statUnlinked:$('statUnlinked'), statUnique:$('statUnique'),
+  btnExportCsv:$('btnExportCsv'), btnClearAll:$('btnClearAll')
+};
+
+function normalize(v){ return String(v ?? '').trim(); }
+function cleanRFID(v){ return normalize(v).replace(/\s+/g,'').toUpperCase(); }
+function escapeHtml(s){
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function extractEAN(v){
+  let s = String(v || '').toUpperCase();
+  s = s.replace(/E[0-9A-F]{16,}/g, ' ');
+  const m = s.match(/[0-9]{8,14}/g) || [];
+  return m[0] || '';
+}
+function extractRFID(v){
+  const s = String(v || '').toUpperCase().replace(/[^0-9A-FE]/g,'');
+  const m = s.match(/E[0-9A-F]{16,}/);
+  return m ? cleanRFID(m[0]) : '';
+}
+
+function detectSeparator(text){
+  const f = text.split(/\r?\n/).find(Boolean) || '';
+  const c = {';':(f.match(/;/g)||[]).length, ',':(f.match(/,/g)||[]).length, '\t':(f.match(/\t/g)||[]).length};
+  return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];
+}
+function parseCSV(text, sepOpt='auto'){
+  const sep = sepOpt === 'auto' ? detectSeparator(text) : sepOpt;
+  const lines = text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim()!=='');
+  if(!lines.length) return [];
+  function split(line){
+    const out=[]; let cur=''; let q=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i], n=line[i+1];
+      if(c === '"'){ if(q && n === '"'){cur+='"'; i++;} else q=!q; }
+      else if(c === sep && !q){ out.push(cur); cur=''; }
+      else cur += c;
+    }
+    out.push(cur);
+    return out.map(x=>x.trim());
+  }
+  const headers = split(lines[0]).map(h=>h.toLowerCase().trim());
+  return lines.slice(1).map((line,idx)=>{
+    const p = split(line), o = {};
+    headers.forEach((h,i)=>o[h]=p[i]??'');
+    return normalizeRow(o,idx);
+  });
+}
+function normalizeRow(o,idx){
+  const d = o.descripcion || o['descripción'] || o.concepto || o.nombre || '';
+  return {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+idx),
+    baseIndex:idx, codigo:o.codigo||'', ean:normalize(o.ean||''),
+    descripcion:normalize(d), talla:normalize(o.talla||''),
+    rfid:'', tipoMedida:'', medida:'', estado:'', ubicacion:'', nota:'', usos:0
+  };
+}
+function saveLocal(){
+  localStorage.setItem('rfidAsociacionesV3', JSON.stringify(state.rows.map(r=>({
+    ean:r.ean, descripcion:r.descripcion, talla:r.talla, rfid:r.rfid,
+    tipoMedida:r.tipoMedida, medida:r.medida, estado:r.estado, ubicacion:r.ubicacion, nota:r.nota, usos:r.usos
+  }))));
+}
+function mergeSaved(){
+  let saved=[];
+  try{ saved=JSON.parse(localStorage.getItem('rfidAsociacionesV3')||'[]'); }catch{}
+  if(!Array.isArray(saved)) return;
+  const used = new Set();
+  saved.forEach(s=>{
+    const row = state.rows.find((r,i)=>!used.has(i)&&r.ean===s.ean&&r.descripcion===s.descripcion&&r.talla===s.talla&&!r.rfid);
+    if(row){
+      Object.assign(row,{
+        rfid:s.rfid||'', tipoMedida:s.tipoMedida||'', medida:s.medida||'',
+        estado:s.estado||'', ubicacion:s.ubicacion||'', nota:s.nota||'', usos:s.usos||0
+      });
+      used.add(state.rows.indexOf(row));
+    }
+  });
+}
+function tipoMedida(desc){
+  const s = String(desc||'').toUpperCase();
+  if(s.startsWith('PAN')) return 'LARGO';
+  if(s.startsWith('CHQ') || s.startsWith('AME') || s.startsWith('ESM') || s.startsWith('FRA')) return 'MANGA';
+  return 'MEDIDA';
+}
+async function loadCatalogAuto(){
+  try{
+    const res = await fetch('catalogo.csv',{cache:'no-store'});
+    if(!res.ok) throw new Error();
+    const text = await res.text();
+    state.rows = parseCSV(text,'auto');
+    mergeSaved();
+    els.catalogStatus.className='notice success';
+    els.catalogStatus.textContent=`Catálogo cargado automáticamente desde catalogo.csv: ${state.rows.length} filas.`;
+    render();
+  }catch(e){
+    els.catalogStatus.className='notice warning';
+    els.catalogStatus.textContent='No se pudo cargar catalogo.csv.';
+    render();
+  }
+}
+function render(){
+  const linked = state.rows.filter(r=>r.rfid).length;
+  const unique = new Set(state.rows.map(r=>r.rfid).filter(Boolean)).size;
+  els.statBase.textContent = state.rows.length;
+  els.statLinked.textContent = linked;
+  els.statUnlinked.textContent = state.rows.length-linked;
+  els.statUnique.textContent = unique;
+  const q = normalize(els.search?.value).toLowerCase();
+  const rows = state.rows.filter(r=>!q || `${r.ean} ${r.descripcion} ${r.talla} ${r.rfid} ${r.estado} ${r.ubicacion} ${r.nota}`.toLowerCase().includes(q)).slice(0,300);
+  els.tbody.innerHTML = rows.map((r,i)=>`
+    <tr>
+      <td>${i+1}</td><td class="mono">${escapeHtml(r.ean)}</td><td>${escapeHtml(r.descripcion)}</td>
+      <td>${escapeHtml(r.talla)}</td><td>${escapeHtml(r.tipoMedida)} ${escapeHtml(r.medida)}</td>
+      <td>${escapeHtml(r.estado)}</td><td>${escapeHtml(r.ubicacion)}</td><td>${escapeHtml(r.nota)}</td>
+      <td class="mono">${r.rfid ? escapeHtml(r.rfid) : '<span style="color:#dc2626;font-weight:800">SIN RFID</span>'}</td>
+    </tr>`).join('');
+}
+function setStatus(el,msg,type='notice'){
+  el.className=`notice ${type}`;
+  el.textContent=msg;
+  el.classList.remove('hidden');
+}
+function selectByEAN(ean){
+  const row = state.rows.find(r=>r.ean===ean&&!r.rfid) || state.rows.find(r=>r.ean===ean);
+  if(!row){
+    state.selectedRow=null;
+    els.productBox.className='notice danger bigbox';
+    els.productBox.textContent=`EAN no encontrado: ${ean}`;
+    return;
+  }
+  state.selectedRow=row;
+  const tm=tipoMedida(row.descripcion);
+  els.tipoMedidaManual.value=tm;
+  els.productBox.className='notice success bigbox';
+  els.productBox.innerHTML=`<b>${escapeHtml(row.descripcion)} T${escapeHtml(row.talla)}</b><br>EAN: <span class="mono">${escapeHtml(row.ean)}</span><br>Tipo medida: <b>${tm}</b>`;
+  els.medidaManual.focus();
+}
+function guardarAlta(){
+  const ean=extractEAN(els.scanEAN.value);
+  const rfid=extractRFID(els.scanRFID.value);
+  if(!ean) return setStatus(els.statusAlta,'Falta EAN.','danger');
+  if(!rfid) return setStatus(els.statusAlta,'Falta RFID.','danger');
+  const already=state.rows.find(r=>r.rfid===rfid);
+  if(already) return setStatus(els.statusAlta,`RFID ya asociado a ${already.descripcion} T${already.talla}.`,'danger');
+  const row = state.selectedRow && state.selectedRow.ean===ean && !state.selectedRow.rfid ? state.selectedRow : state.rows.find(r=>r.ean===ean&&!r.rfid);
+  if(!row) return setStatus(els.statusAlta,'No queda fila libre para ese EAN o no existe.','danger');
+  row.rfid=rfid;
+  row.tipoMedida=els.tipoMedidaManual.value||tipoMedida(row.descripcion);
+  row.medida=normalize(els.medidaManual.value);
+  row.estado=normalize(els.estadoManual.value);
+  row.ubicacion=normalize(els.ubicacionManual.value);
+  row.nota=normalize(els.notaManual.value);
+  saveLocal(); render();
+  setStatus(els.statusAlta,`Guardado: ${row.descripcion} T${row.talla} → ${rfid}`,'success');
+  nuevaPrenda();
+}
+function nuevaPrenda(){
+  els.scanEAN.value=''; els.scanRFID.value=''; els.medidaManual.value=''; els.notaManual.value='';
+  state.selectedRow=null;
+  els.productBox.className='notice warning bigbox';
+  els.productBox.textContent='Ningún EAN seleccionado.';
+  els.tipoMedidaManual.value='';
+  els.scanEAN.focus();
+}
+
+function abrirOpcionesBusqueda(){
+  els.tipoBusquedaPanel.classList.remove('hidden');
+  els.busquedaEANPanel.classList.add('hidden');
+  els.busquedaModeloPanel.classList.add('hidden');
+  els.listaCandidatos.className='notice warning';
+  els.listaCandidatos.textContent='Elige buscar por EAN o por MODELO.';
+}
+function buscarPorEAN(){
+  els.busquedaEANPanel.classList.remove('hidden');
+  els.busquedaModeloPanel.classList.add('hidden');
+  els.listaCandidatos.className='notice warning';
+  els.listaCandidatos.textContent='Escanea el EAN de la prenda.';
+  els.buscarEAN.value='';
+  setTimeout(()=>els.buscarEAN.focus(),100);
+}
+function buscarPorModelo(){
+  els.busquedaModeloPanel.classList.remove('hidden');
+  els.busquedaEANPanel.classList.add('hidden');
+  els.listaCandidatos.className='notice warning';
+  els.listaCandidatos.textContent='Escribe modelo, familia o talla.';
+  els.buscarModelo.value='';
+  setTimeout(()=>els.buscarModelo.focus(),100);
+}
+function renderCandidatos(rows){
+  if(!rows.length){
+    els.listaCandidatos.className='notice danger';
+    els.listaCandidatos.textContent='No hay candidatos dados de alta.';
+    return;
+  }
+  els.listaCandidatos.className='notice';
+  els.listaCandidatos.innerHTML=`<b>${rows.length} candidato(s). Pulsa el que quieres localizar:</b>`+
+    rows.map(r=>`<button class="candidate" data-rfid="${escapeHtml(r.rfid)}">
+      <b>${escapeHtml(r.descripcion)} T${escapeHtml(r.talla)}</b><br>
+      ${escapeHtml(r.tipoMedida)} ${escapeHtml(r.medida)} · ${escapeHtml(r.estado)} · Ub ${escapeHtml(r.ubicacion)}<br>
+      <span class="mono">${escapeHtml(r.rfid)}</span>
+    </button>`).join('');
+}
+function buscarCandidatosPorEAN(){
+  const ean=extractEAN(els.buscarEAN.value);
+  if(!ean) return;
+  els.buscarEAN.value=ean;
+  const rows=state.rows.filter(r=>r.rfid && r.ean===ean).slice(0,40);
+  renderCandidatos(rows);
+}
+function buscarCandidatosPorModelo(){
+  const qRaw=normalize(els.buscarModelo.value);
+  const q=qRaw.toLowerCase();
+  if(!qRaw){
+    els.listaCandidatos.className='notice warning';
+    els.listaCandidatos.textContent='Escribe modelo/familia/talla.';
+    return;
+  }
+  const words=q.split(/\s+/).filter(Boolean);
+  const rows=state.rows.filter(r=>{
+    if(!r.rfid) return false;
+    const txt=`${r.ean} ${r.descripcion} ${r.talla} ${r.tipoMedida} ${r.medida} ${r.estado} ${r.ubicacion} ${r.nota}`.toLowerCase();
+    return words.every(w=>txt.includes(w));
+  }).slice(0,40);
+  renderCandidatos(rows);
+}
+function selectTarget(rfid){
+  const row=state.rows.find(r=>r.rfid===rfid);
+  state.selectedTarget=row||null;
+  els.rfidObjetivo.value=rfid;
+  els.resultadoLocalizar.className='notice warning';
+  els.resultadoLocalizar.textContent=row ? `Objetivo seleccionado: ${row.descripcion} T${row.talla}. Ahora mueve la pistola.` : 'Objetivo seleccionado.';
+  els.buscarRFID.value='';
+  els.buscarRFID.focus();
+}
+function checkLocalizar(){
+  const target=cleanRFID(els.rfidObjetivo.value);
+  const seen=extractRFID(els.buscarRFID.value);
+  if(!target||!seen) return;
+  els.buscarRFID.value=seen;
+  if(seen===target){
+    els.resultadoLocalizar.className='notice success';
+    els.resultadoLocalizar.textContent='✅ ENCONTRADO. Ese es el RFID objetivo.';
+    try{navigator.vibrate?.([300,100,300])}catch{}
+  }else{
+    els.resultadoLocalizar.className='notice warning';
+    els.resultadoLocalizar.textContent=`Leído ${seen}, todavía no es el objetivo.`;
+  }
+}
+function setMode(mode){
+  if(mode==='alta'){
+    els.altaPanel.classList.remove('hidden');
+    els.localizarPanel.classList.add('hidden');
+    els.modeAlta.className='good';
+    els.modeBuscar.className='secondary';
+    setTimeout(()=>els.scanEAN.focus(),100);
+  }else{
+    els.altaPanel.classList.add('hidden');
+    els.localizarPanel.classList.remove('hidden');
+    els.modeAlta.className='secondary';
+    els.modeBuscar.className='good';
+    els.tipoBusquedaPanel.classList.add('hidden');
+    els.busquedaEANPanel.classList.add('hidden');
+    els.busquedaModeloPanel.classList.add('hidden');
+    els.listaCandidatos.className='notice warning';
+    els.listaCandidatos.textContent='Pulsa BUSCAR para empezar.';
+    els.resultadoLocalizar.className='notice warning';
+    els.resultadoLocalizar.textContent='Esperando selección...';
+  }
+}
+function exportCsv(){
+  const headers=['EAN','DESCRIPCION','TALLA','TIPO_MEDIDA','MEDIDA','ESTADO','UBICACION','NOTA','RFID','USOS'];
+  const lines=[headers.join(';')];
+  state.rows.filter(r=>r.rfid).forEach(r=>{
+    const vals=[r.ean,r.descripcion,r.talla,r.tipoMedida,r.medida,r.estado,r.ubicacion,r.nota,r.rfid,r.usos]
+      .map(v=>`"${String(v??'').replace(/"/g,'""')}"`);
+    lines.push(vals.join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='asociaciones_rfid_velneo.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function debounce(fn,ms=80){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms)}}
+
+els.scanEAN.addEventListener('input',debounce(()=>{const ean=extractEAN(els.scanEAN.value);if(ean){els.scanEAN.value=ean;selectByEAN(ean)}}));
+els.scanEAN.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const ean=extractEAN(els.scanEAN.value);if(ean)selectByEAN(ean)}});
+els.scanRFID.addEventListener('input',debounce(()=>{const rfid=extractRFID(els.scanRFID.value);if(rfid){els.scanRFID.value=rfid;guardarAlta()}}));
+
+els.btnGuardarAlta.addEventListener('click',guardarAlta);
+els.btnNueva.addEventListener('click',nuevaPrenda);
+els.modeAlta.addEventListener('click',()=>setMode('alta'));
+els.modeBuscar.addEventListener('click',()=>setMode('buscar'));
+
+els.btnAbrirBusqueda.addEventListener('click',abrirOpcionesBusqueda);
+els.btnBuscarPorEAN.addEventListener('click',buscarPorEAN);
+els.btnBuscarPorModelo.addEventListener('click',buscarPorModelo);
+els.buscarEAN.addEventListener('input',debounce(buscarCandidatosPorEAN,120));
+els.buscarEAN.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();buscarCandidatosPorEAN()}});
+els.buscarModelo.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();buscarCandidatosPorModelo()}});
+els.btnBuscarCandidatos.addEventListener('click',buscarCandidatosPorModelo);
+els.listaCandidatos.addEventListener('click',e=>{const btn=e.target.closest('[data-rfid]');if(btn)selectTarget(btn.dataset.rfid)});
+els.buscarRFID.addEventListener('input',debounce(checkLocalizar));
+
+els.search?.addEventListener('input',render);
+els.btnExportCsv.addEventListener('click',exportCsv);
+els.btnClearAll.addEventListener('click',()=>{if(confirm('¿Borrar asociaciones guardadas en este navegador?')){localStorage.removeItem('rfidAsociacionesV3');location.reload()}});
+els.csvFile.addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const text=await file.text();state.rows=parseCSV(text,'auto');mergeSaved();els.catalogStatus.className='notice success';els.catalogStatus.textContent=`CSV cargado manualmente: ${state.rows.length} filas.`;render()});
+
+loadCatalogAuto();
+setMode('alta');
+</script>
+</body>
 </html>
