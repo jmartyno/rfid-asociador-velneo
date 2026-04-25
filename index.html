@@ -303,7 +303,11 @@
         </div>
 
         <div class="card stack">
-          <h2>3. Alta rápida de prenda</h2>
+          <div class="row" style="margin-bottom:10px;">
+            <button id="modeAlta" class="good">ALTA</button>
+            <button id="modeBuscar" class="secondary">LOCALIZAR</button>
+          </div>
+          <h2 id="tituloModo">3. Alta rápida de prenda</h2>
           <div class="notice success">Escanea primero el EAN. La app mostrará la prenda. Rellena atributos y escanea RFID para guardar.</div>
 
           <div>
@@ -367,6 +371,15 @@
           </div>
 
           <div id="associationStatus" class="notice hidden"></div>
+
+          <div id="localizarPanel" class="hidden stack">
+            <div class="notice success">Escanea RFID para localizar la prenda.</div>
+            <div>
+              <label for="buscarRFID">Escanear RFID</label>
+              <input id="buscarRFID" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Escanea RFID" />
+            </div>
+            <div id="resultadoLocalizar" class="notice warning">Esperando RFID...</div>
+          </div>
         </div>
 
         <div class="card stack">
@@ -505,7 +518,13 @@
       btnExportCsv: document.getElementById('btnExportCsv'),
       btnExportJson: document.getElementById('btnExportJson'),
       btnImportJson: document.getElementById('btnImportJson'),
-      jsonFile: document.getElementById('jsonFile')
+      jsonFile: document.getElementById('jsonFile'),
+      modeAlta: document.getElementById('modeAlta'),
+      modeBuscar: document.getElementById('modeBuscar'),
+      tituloModo: document.getElementById('tituloModo'),
+      localizarPanel: document.getElementById('localizarPanel'),
+      buscarRFID: document.getElementById('buscarRFID'),
+      resultadoLocalizar: document.getElementById('resultadoLocalizar')
     };
 
     function saveLocal() {
@@ -1001,6 +1020,42 @@
       }
     });
     els.btnDemo.addEventListener('click', loadDemo);
+
+    function setModeAlta() {
+      els.tituloModo.textContent = '3. Alta rápida de prenda';
+      els.localizarPanel.classList.add('hidden');
+      els.scanEAN.closest('div').style.display = '';
+      els.productBox.style.display = '';
+      els.tipoMedidaManual.closest('.split').style.display = '';
+      els.estadoManual.closest('.split').style.display = '';
+      els.notaManual.closest('div').style.display = '';
+      els.scanRFID.closest('div').style.display = '';
+      els.btnAssociate.closest('.row').style.display = '';
+      els.modeAlta.className = 'good';
+      els.modeBuscar.className = 'secondary';
+      setTimeout(() => els.scanEAN.focus(), 100);
+    }
+
+    function setModeLocalizar() {
+      els.tituloModo.textContent = '3. Localizar prenda';
+      els.localizarPanel.classList.remove('hidden');
+      els.scanEAN.closest('div').style.display = 'none';
+      els.productBox.style.display = 'none';
+      els.tipoMedidaManual.closest('.split').style.display = 'none';
+      els.estadoManual.closest('.split').style.display = 'none';
+      els.notaManual.closest('div').style.display = 'none';
+      els.scanRFID.closest('div').style.display = 'none';
+      els.btnAssociate.closest('.row').style.display = 'none';
+      els.modeAlta.className = 'secondary';
+      els.modeBuscar.className = 'good';
+      els.buscarRFID.value = '';
+      els.resultadoLocalizar.className = 'notice warning';
+      els.resultadoLocalizar.textContent = 'Esperando RFID...';
+      setTimeout(() => els.buscarRFID.focus(), 100);
+    }
+
+    els.modeAlta.addEventListener('click', setModeAlta);
+    els.modeBuscar.addEventListener('click', setModeLocalizar);
     els.btnClearAll.addEventListener('click', resetAll);
 
     els.tbody.addEventListener('click', e => {
@@ -1065,6 +1120,28 @@
         render();
         els.medidaManual.focus();
       }
+    });
+
+    handleScanInput(els.buscarRFID, () => {
+      const rfid = extractRFID(els.buscarRFID.value);
+      if (!rfid) return;
+      els.buscarRFID.value = rfid;
+      const row = state.mappedRows.find(r => r.rfid === rfid);
+      if (!row) {
+        els.resultadoLocalizar.className = 'notice danger';
+        els.resultadoLocalizar.innerHTML = `<b>RFID no encontrado</b><br><span class="mono">${escapeHtml(rfid)}</span>`;
+        return;
+      }
+      els.resultadoLocalizar.className = 'notice success';
+      els.resultadoLocalizar.innerHTML = `
+        <b>${escapeHtml(row.descripcion)}</b><br>
+        EAN: <span class="mono">${escapeHtml(row.ean)}</span><br>
+        Talla: <b>${escapeHtml(row.talla)}</b><br>
+        Medida: <b>${escapeHtml(row.tipoMedida || row.manga)} ${escapeHtml(row.medida || '')}</b><br>
+        Estado: <b>${escapeHtml(row.estado)}</b><br>
+        Ubicación: <b>${escapeHtml(row.ubicacion)}</b><br>
+        Nota: ${escapeHtml(row.nota || '-')}
+      `;
     });
 
     async function cargarCatalogoAutomatico() {
