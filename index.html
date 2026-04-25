@@ -50,15 +50,7 @@
       font-weight: 700;
     }
     input, select, textarea, button {
-      border: 0;
-      background: var(--accent);
-      color: white;
-      padding: 14px 16px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 17px;
-      min-height: 48px;
+      font: inherit;
     }
     input[type="text"], input[type="search"], input[type="number"], textarea, select {
       width: 100%;
@@ -66,6 +58,7 @@
       border: 1px solid var(--line);
       border-radius: 12px;
       background: white;
+      color: var(--text);
       font-size: 18px;
     }
     textarea { min-height: 84px; resize: vertical; }
@@ -315,7 +308,7 @@
 
           <div>
             <label for="scanEAN">Escanear EAN</label>
-            <input id="scanEAN" type="text" placeholder="Escanea el EAN de Velneo" autofocus />
+            <input id="scanEAN" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Escanea el EAN de Velneo" autofocus />
           </div>
 
           <div id="productBox" class="notice warning">
@@ -364,7 +357,7 @@
 
           <div>
             <label for="scanRFID">Escanear RFID</label>
-            <input id="scanRFID" type="text" placeholder="Escanea RFID para guardar automáticamente" />
+            <input id="scanRFID" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Escanea RFID para guardar automáticamente" />
           </div>
 
           <div class="row">
