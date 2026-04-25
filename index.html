@@ -1029,7 +1029,7 @@
       let timer;
       inputEl.addEventListener('input', () => {
         clearTimeout(timer);
-        timer = setTimeout(callback, 80);
+        timer = setTimeout(callback, 200);
       });
       inputEl.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
