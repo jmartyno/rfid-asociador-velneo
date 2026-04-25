@@ -195,31 +195,47 @@
     }
 
     @media (max-width: 620px) {
-      .wrap { padding: 8px; }
-      h1 { font-size: 20px; margin-bottom: 6px; }
-      body { background: white; }
-      .card { box-shadow: none; }
-      input[type="text"], input[type="search"], input[type="number"], textarea, select {
-        font-size: 20px;
-        padding: 16px;
+      html, body { width: 100%; overflow-x: hidden; }
+      body { background: white; font-size: 20px; }
+      .wrap { padding: 6px; }
+      h1 { font-size: 22px; margin-bottom: 4px; }
+      h1 + p { display: none; }
+      h2 { font-size: 22px; }
+      .card { box-shadow: none; border-radius: 12px; padding: 10px; }
+
+      /* Modo PDA: solo dejamos visible el alta rápida */
+      .grid > .stack:first-child > .card:nth-child(1),
+      .grid > .stack:first-child > .card:nth-child(2),
+      .grid > .stack:first-child > .card:nth-child(4),
+      .grid > .stack:first-child > .card:nth-child(5),
+      .grid > .stack:nth-child(2) {
+        display: none;
       }
+
+      input[type="text"], input[type="search"], input[type="number"], textarea, select {
+        font-size: 24px;
+        padding: 18px;
+        min-height: 62px;
+      }
+      label { font-size: 18px; }
       button {
         width: 100%;
-        font-size: 18px;
-        min-height: 54px;
+        font-size: 22px;
+        min-height: 62px;
       }
       .row { gap: 8px; }
       .row > *, .row .auto { flex: 1 1 100%; }
       #productBox {
-        font-size: 18px;
+        font-size: 22px;
         line-height: 1.45;
+        padding: 16px;
       }
       #scanEAN, #scanRFID, #medidaManual {
-        font-size: 24px;
-        font-weight: 700;
+        font-size: 28px;
+        font-weight: 800;
       }
-      textarea { min-height: 70px; }
-      .table-wrap { max-height: 35vh; }
+      textarea { min-height: 90px; }
+      .notice { font-size: 19px; }
     }
   </style>
 </head>
@@ -551,16 +567,16 @@
     }
 
     function extractEAN(v) {
-      // La pistola puede escribir EAN+RFID juntos. Primero quitamos posibles RFID.
-      let s = String(v ?? '').toUpperCase();
+      // La pistola puede meter EAN y RFID juntos. Quitamos RFID y nos quedamos con el primer número largo.
+      let s = String(v || '').toUpperCase();
       s = s.replace(/E[0-9A-F]{16,}/g, ' ');
-      const matches = s.match(/\d{8,14}/g) || [];
+      const matches = s.match(/[0-9]{8,14}/g) || [];
       return matches[0] || '';
     }
 
     function extractRFID(v) {
-      // Busca un EPC tipo E280... aunque venga pegado a un EAN.
-      const s = String(v ?? '').toUpperCase().replace(/\s+/g, '');
+      // Busca EPC tipo E280... aunque venga junto al EAN.
+      const s = String(v || '').toUpperCase().replace(/[^0-9A-FE]/g, '');
       const match = s.match(/E[0-9A-F]{16,}/);
       return match ? cleanRFID(match[0]) : '';
     }
