@@ -905,8 +905,39 @@
       }
     });
 
-    loadLocal();
-    render();
+    async function cargarCatalogoAutomatico() {
+      try {
+        const res = await fetch('catalogo.csv', { cache: 'no-store' });
+        if (!res.ok) {
+          loadLocal();
+          render();
+          return;
+        }
+        const text = await res.text();
+        const parsed = parseCsv(text, 'auto');
+        state.headers = parsed.headers;
+        state.rawRows = parsed.rows;
+        state.mappedRows = [];
+        fillHeaderSelects();
+
+        // Forzar columnas habituales de Velneo si existen
+        const find = (name) => state.headers.find(h => h.toLowerCase().trim() === name) || '';
+        els.colEAN.value = find('ean') || els.colEAN.value;
+        els.colDescripcion.value = find('descripcion') || find('descripción') || els.colDescripcion.value;
+        els.colTalla.value = find('talla') || els.colTalla.value;
+        els.colEstado.value = find('estado') || els.colEstado.value;
+        els.colManga.value = find('manga') || find('largo') || els.colManga.value;
+        els.colUbicacion.value = find('ubicacion') || find('ubicación') || find('almacen') || find('almacén') || els.colUbicacion.value;
+
+        mapRows();
+        setStatus(`Catálogo cargado automáticamente desde catalogo.csv: ${parsed.rows.length} filas.`, 'success');
+      } catch (e) {
+        loadLocal();
+        render();
+      }
+    }
+
+    cargarCatalogoAutomatico();
   </script>
 </body>
 </html>
