@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asociador RFID + Velneo</title>
+  <title>Alta RFID prendas Velneo</title>
   <style>
     :root {
       --bg: #f6f7fb;
@@ -175,8 +175,8 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Asociador RFID + exportación Velneo</h1>
-    <p class="muted">App local para cargar un CSV exportado de Velneo, leer RFID con teclado-emulador, asociar cada etiqueta a una prenda física y exportar el resultado.</p>
+    <h1>Alta RFID prendas Velneo</h1>
+    <p class="muted">Flujo rápido: escanear EAN → rellenar atributos → escanear RFID → guardar prenda única.</p>
 
     <div class="grid">
       <div class="stack">
@@ -244,39 +244,67 @@
         </div>
 
         <div class="card stack">
-          <h2>3. Asociar RFID</h2>
-          <div class="notice success">Ideal para usar con el lector Chainway en modo teclado. Escaneas EAN y luego RFID, o buscas la prenda y escaneas solo RFID.</div>
+          <h2>3. Alta rápida de prenda</h2>
+          <div class="notice success">Escanea primero el EAN. La app mostrará la prenda. Rellena atributos y escanea RFID para guardar.</div>
 
           <div>
-            <label for="scanEAN">Escanear o escribir EAN</label>
-            <input id="scanEAN" type="text" placeholder="Escanea el EAN de la prenda o escríbelo" />
+            <label for="scanEAN">Escanear EAN</label>
+            <input id="scanEAN" type="text" placeholder="Escanea el EAN de Velneo" autofocus />
           </div>
 
-          <div>
-            <label for="scanRFID">Escanear RFID</label>
-            <input id="scanRFID" type="text" placeholder="Escanea la etiqueta RFID" />
+          <div id="productBox" class="notice warning">
+            Ningún EAN seleccionado.
           </div>
 
           <div class="split">
             <div>
-              <label for="estadoManual">Estado inicial</label>
+              <label for="tipoMedidaManual">Tipo medida</label>
+              <input id="tipoMedidaManual" type="text" readonly placeholder="Auto: MANGA / LARGO" />
+            </div>
+            <div>
+              <label for="medidaManual">Medida</label>
+              <input id="medidaManual" type="number" inputmode="numeric" placeholder="Ej. 62 / 102" />
+            </div>
+          </div>
+
+          <div class="split">
+            <div>
+              <label for="estadoManual">Estado</label>
               <select id="estadoManual">
-                <option value="">No tocar</option>
-                <option value="nuevo">Nuevo</option>
-                <option value="usado">Usado</option>
-                <option value="alquilado">Alquilado</option>
+                <option value="EST">EST</option>
+                <option value="SEM">SEM</option>
+                <option value="BAS">BAS</option>
               </select>
             </div>
             <div>
               <label for="ubicacionManual">Ubicación</label>
-              <input id="ubicacionManual" type="text" placeholder="Ej. Hermosilla / Almacén 34" />
+              <select id="ubicacionManual">
+                <option value="01">01</option>
+                <option value="02">02</option>
+                <option value="03">03</option>
+                <option value="04">04</option>
+                <option value="05">05</option>
+                <option value="06">06</option>
+                <option value="07">07</option>
+                <option value="99">99</option>
+              </select>
             </div>
           </div>
 
+          <div>
+            <label for="notaManual">Nota</label>
+            <textarea id="notaManual" placeholder="Ej. arreglada, da menos talla, pequeño defecto..."></textarea>
+          </div>
+
+          <div>
+            <label for="scanRFID">Escanear RFID</label>
+            <input id="scanRFID" type="text" placeholder="Escanea RFID para guardar automáticamente" />
+          </div>
+
           <div class="row">
-            <button id="btnAssociate" class="good auto">Asociar EAN + RFID</button>
-            <button id="btnAssociateSelected" class="auto">Asociar al registro seleccionado</button>
-            <button id="btnClearScan" class="secondary auto">Limpiar</button>
+            <button id="btnAssociate" class="good auto">Guardar EAN + RFID</button>
+            <button id="btnAssociateSelected" class="auto">Guardar en registro seleccionado</button>
+            <button id="btnClearScan" class="secondary auto">Nueva prenda</button>
           </div>
 
           <div id="associationStatus" class="notice hidden"></div>
@@ -350,9 +378,10 @@
                   <th>EAN</th>
                   <th>Descripción</th>
                   <th>Talla</th>
-                  <th>Manga</th>
+                  <th>Medida</th>
                   <th>Estado</th>
                   <th>Ubicación</th>
+                  <th>Nota</th>
                   <th>RFID</th>
                   <th>Acción</th>
                 </tr>
@@ -396,6 +425,9 @@
       btnApplyMapping: document.getElementById('btnApplyMapping'),
       scanEAN: document.getElementById('scanEAN'),
       scanRFID: document.getElementById('scanRFID'),
+      productBox: document.getElementById('productBox'),
+      tipoMedidaManual: document.getElementById('tipoMedidaManual'),
+      medidaManual: document.getElementById('medidaManual'),
       estadoManual: document.getElementById('estadoManual'),
       ubicacionManual: document.getElementById('ubicacionManual'),
       btnAssociate: document.getElementById('btnAssociate'),
@@ -572,6 +604,9 @@
           manga: normalize(row[state.mapping.manga]),
           ubicacion: normalize(row[state.mapping.ubicacion]),
           rfid: existing.rfid || '',
+          tipoMedida: existing.tipoMedida || '',
+          medida: existing.medida || '',
+          nota: existing.nota || '',
           usos: Number.isFinite(existing.usos) ? existing.usos : 0,
           pedidoActual: existing.pedidoActual || ''
         };
@@ -638,9 +673,10 @@
             <td class="mono">${escapeHtml(row.ean)}</td>
             <td>${escapeHtml(row.descripcion)}</td>
             <td>${escapeHtml(row.talla)}</td>
-            <td>${escapeHtml(row.manga)}</td>
+            <td>${escapeHtml(row.tipoMedida || row.manga)} ${escapeHtml(row.medida || '')}</td>
             <td>${row.estado ? `<span class="${row.estado === 'nuevo' ? 'tag-ok' : row.estado === 'usado' ? 'tag-warn' : ''}">${escapeHtml(row.estado)}</span>` : ''}</td>
             <td>${escapeHtml(row.ubicacion)}</td>
+            <td>${escapeHtml(row.nota || '')}</td>
             <td class="mono">${row.rfid ? escapeHtml(row.rfid) : '<span class="tag-bad">SIN RFID</span>'}</td>
             <td>
               <button class="secondary small-btn" data-action="select" data-id="${row.id}">Seleccionar</button>
@@ -651,25 +687,52 @@
       }).join('');
     }
 
+    function getTipoMedidaFromDescripcion(desc) {
+      const s = String(desc || '').toUpperCase().trim();
+      if (s.startsWith('PAN')) return 'LARGO';
+      if (s.startsWith('CHQ') || s.startsWith('AME') || s.startsWith('ESM') || s.startsWith('FRA')) return 'MANGA';
+      return 'MEDIDA';
+    }
+
+    function showSelectedProduct(row) {
+      if (!row) {
+        els.productBox.className = 'notice warning';
+        els.productBox.textContent = 'Ningún EAN seleccionado.';
+        els.tipoMedidaManual.value = '';
+        return;
+      }
+      const tipo = getTipoMedidaFromDescripcion(row.descripcion);
+      els.tipoMedidaManual.value = tipo;
+      els.productBox.className = 'notice success';
+      els.productBox.innerHTML = `<b>${escapeHtml(row.descripcion)}</b><br>EAN: <span class="mono">${escapeHtml(row.ean)}</span> · Talla: ${escapeHtml(row.talla)} · Tipo medida: <b>${tipo}</b>`;
+    }
+
+    function saveAttributesToRow(row, rfid) {
+      row.rfid = rfid;
+      row.tipoMedida = normalize(els.tipoMedidaManual.value) || getTipoMedidaFromDescripcion(row.descripcion);
+      row.medida = normalize(els.medidaManual.value);
+      row.estado = normalize(els.estadoManual.value).toUpperCase();
+      row.ubicacion = normalize(els.ubicacionManual.value);
+      row.nota = normalize(els.notaManual.value);
+    }
+
     function associateByEANAndRFID() {
       clearStatus();
       const ean = normalize(els.scanEAN.value);
       const rfid = cleanRFID(els.scanRFID.value);
-      const estadoManual = normalize(els.estadoManual.value).toLowerCase();
-      const ubicacionManual = normalize(els.ubicacionManual.value);
 
       if (!ean) {
-        setStatus('Falta el EAN.', 'danger');
+        setStatus('Falta escanear el EAN.', 'danger');
         return;
       }
       if (!rfid) {
-        setStatus('Falta el RFID.', 'danger');
+        setStatus('Falta escanear el RFID.', 'danger');
         return;
       }
 
       const alreadyRFID = state.mappedRows.find(r => r.rfid === rfid);
       if (alreadyRFID) {
-        setStatus(`Ese RFID ya está asociado al EAN ${alreadyRFID.ean}.`, 'danger');
+        setStatus(`Ese RFID ya está asociado a ${alreadyRFID.ean} - ${alreadyRFID.descripcion}.`, 'danger');
         return;
       }
 
@@ -677,34 +740,34 @@
       if (!matches.length) {
         const existing = state.mappedRows.find(r => r.ean === ean);
         if (existing) {
-          setStatus(`Ese EAN ya existe, pero no queda ninguna fila libre sin RFID. Puedes seleccionar una fila y usar "Asociar al registro seleccionado".`, 'warning');
+          setStatus('Ese EAN existe, pero no queda ninguna fila libre sin RFID.', 'warning');
         } else {
-          setStatus('No se ha encontrado ese EAN en la base cargada.', 'danger');
+          setStatus('No se ha encontrado ese EAN en el catálogo.', 'danger');
         }
         return;
       }
 
       const row = matches[0];
-      row.rfid = rfid;
-      if (estadoManual) row.estado = estadoManual;
-      if (ubicacionManual) row.ubicacion = ubicacionManual;
+      saveAttributesToRow(row, rfid);
       state.selectedId = row.id;
       saveLocal();
       render();
-      setStatus(`RFID asociado correctamente a ${row.ean} - ${row.descripcion}.`, 'success');
+      showSelectedProduct(row);
+      setStatus(`Guardado: ${row.descripcion} talla ${row.talla} → ${rfid}.`, 'success');
       els.scanRFID.value = '';
-      els.scanEAN.select();
+      els.scanEAN.value = '';
+      els.medidaManual.value = '';
+      els.notaManual.value = '';
+      els.scanEAN.focus();
     }
 
     function associateSelected() {
       clearStatus();
       const row = state.mappedRows.find(r => r.id === state.selectedId);
       const rfid = cleanRFID(els.scanRFID.value);
-      const estadoManual = normalize(els.estadoManual.value).toLowerCase();
-      const ubicacionManual = normalize(els.ubicacionManual.value);
 
       if (!row) {
-        setStatus('Selecciona primero una fila.', 'danger');
+        setStatus('Selecciona primero una fila o escanea un EAN.', 'danger');
         return;
       }
       if (!rfid) {
@@ -713,15 +776,14 @@
       }
       const alreadyRFID = state.mappedRows.find(r => r.rfid === rfid && r.id !== row.id);
       if (alreadyRFID) {
-        setStatus(`Ese RFID ya está asociado al EAN ${alreadyRFID.ean}.`, 'danger');
+        setStatus(`Ese RFID ya está asociado a ${alreadyRFID.ean} - ${alreadyRFID.descripcion}.`, 'danger');
         return;
       }
-      row.rfid = rfid;
-      if (estadoManual) row.estado = estadoManual;
-      if (ubicacionManual) row.ubicacion = ubicacionManual;
+      saveAttributesToRow(row, rfid);
       saveLocal();
       render();
-      setStatus(`RFID asociado a la fila seleccionada.`, 'success');
+      showSelectedProduct(row);
+      setStatus('Guardado en el registro seleccionado.', 'success');
       els.scanRFID.value = '';
     }
 
@@ -735,10 +797,10 @@
     }
 
     function exportCsv() {
-      const headers = ['EAN', 'DESCRIPCION', 'TALLA', 'MANGA', 'ESTADO', 'UBICACION', 'RFID', 'USOS', 'PEDIDO_ACTUAL'];
+      const headers = ['EAN', 'DESCRIPCION', 'TALLA', 'TIPO_MEDIDA', 'MEDIDA', 'ESTADO', 'UBICACION', 'NOTA', 'RFID', 'USOS', 'PEDIDO_ACTUAL'];
       const lines = [headers.join(';')];
       state.mappedRows.forEach(r => {
-        const values = [r.ean, r.descripcion, r.talla, r.manga, r.estado, r.ubicacion, r.rfid, r.usos, r.pedidoActual]
+        const values = [r.ean, r.descripcion, r.talla, r.tipoMedida || r.manga, r.medida, r.estado, r.ubicacion, r.nota, r.rfid, r.usos, r.pedidoActual]
           .map(v => `"${String(v ?? '').replace(/"/g, '""')}"`);
         lines.push(values.join(';'));
       });
@@ -817,6 +879,9 @@
     els.btnClearScan.addEventListener('click', () => {
       els.scanEAN.value = '';
       els.scanRFID.value = '';
+      els.medidaManual.value = '';
+      els.notaManual.value = '';
+      showSelectedProduct(null);
       clearStatus();
       els.scanEAN.focus();
     });
@@ -855,6 +920,7 @@
         const id = button.dataset.id;
         if (action === 'select') {
           state.selectedId = id;
+          showSelectedProduct(state.mappedRows.find(r => r.id === id));
           render();
         } else if (action === 'unlink') {
           unlink(id);
@@ -863,6 +929,7 @@
       }
       if (tr) {
         state.selectedId = tr.dataset.id;
+        showSelectedProduct(state.mappedRows.find(r => r.id === state.selectedId));
         render();
       }
     });
@@ -901,7 +968,9 @@
       const match = state.mappedRows.find(r => r.ean === ean && !r.rfid) || state.mappedRows.find(r => r.ean === ean);
       if (match) {
         state.selectedId = match.id;
+        showSelectedProduct(match);
         render();
+        els.medidaManual.focus();
       }
     });
 
