@@ -519,12 +519,21 @@
     }
 
     function autoDetectMapping() {
-      const headersLower = state.headers.map(h => h.toLowerCase());
+      const headersLower = state.headers.map(h => h.toLowerCase().trim());
+
       const findHeader = patterns => {
+        // 1) primero busca coincidencia exacta, para que "ean" gane a "codigo"
+        for (const p of patterns) {
+          const exactIndex = headersLower.findIndex(h => h === p);
+          if (exactIndex >= 0) return state.headers[exactIndex];
+        }
+        // 2) después busca coincidencia parcial
         const index = headersLower.findIndex(h => patterns.some(p => h.includes(p)));
         return index >= 0 ? state.headers[index] : '';
       };
-      if (!els.colEAN.value) els.colEAN.value = findHeader(['ean', 'codigo barras', 'código barras', 'codigo', 'código']);
+
+      // Muy importante: EAN debe ser la columna "ean", no "codigo".
+      if (!els.colEAN.value) els.colEAN.value = findHeader(['ean', 'codigo barras', 'código barras']);
       if (!els.colDescripcion.value) els.colDescripcion.value = findHeader(['descripcion', 'descripción', 'concepto', 'articulo', 'artículo', 'nombre']);
       if (!els.colTalla.value) els.colTalla.value = findHeader(['talla']);
       if (!els.colEstado.value) els.colEstado.value = findHeader(['estado', 'uso', 'calidad']);
