@@ -373,12 +373,28 @@
           <div id="associationStatus" class="notice hidden"></div>
 
           <div id="localizarPanel" class="hidden stack">
-            <div class="notice success">Escanea RFID para localizar la prenda.</div>
+            <div class="notice success">Busca la prenda, selecciona un RFID objetivo y luego mueve la pistola con el gatillo. Cuando lea ese RFID, avisará.</div>
+
             <div>
-              <label for="buscarRFID">Escanear RFID</label>
-              <input id="buscarRFID" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Escanea RFID" />
+              <label for="buscarModelo">Buscar modelo / EAN</label>
+              <input id="buscarModelo" type="text" inputmode="none" autocomplete="off" placeholder="Ej. CHQ C 999/3 48 o EAN" />
             </div>
-            <div id="resultadoLocalizar" class="notice warning">Esperando RFID...</div>
+
+            <div id="listaObjetivos" class="notice warning">Busca una prenda para ver RFIDs dados de alta.</div>
+
+            <div>
+              <label for="rfidObjetivo">RFID objetivo</label>
+              <input id="rfidObjetivo" type="text" readonly placeholder="Selecciona una prenda de la lista" />
+            </div>
+
+            <button id="btnIniciarBusqueda" class="good">BUSCAR PRENDA</button>
+
+            <div>
+              <label for="buscarRFID">Lectura RFID</label>
+              <input id="buscarRFID" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Pulsa gatillo y mueve la pistola" />
+            </div>
+
+            <div id="resultadoLocalizar" class="notice warning">Esperando selección...</div>
           </div>
         </div>
 
@@ -524,7 +540,11 @@
       tituloModo: document.getElementById('tituloModo'),
       localizarPanel: document.getElementById('localizarPanel'),
       buscarRFID: document.getElementById('buscarRFID'),
-      resultadoLocalizar: document.getElementById('resultadoLocalizar')
+      resultadoLocalizar: document.getElementById('resultadoLocalizar'),
+      buscarModelo: document.getElementById('buscarModelo'),
+      listaObjetivos: document.getElementById('listaObjetivos'),
+      rfidObjetivo: document.getElementById('rfidObjetivo'),
+      btnIniciarBusqueda: document.getElementById('btnIniciarBusqueda')
     };
 
     function saveLocal() {
@@ -1048,14 +1068,78 @@
       els.btnAssociate.closest('.row').style.display = 'none';
       els.modeAlta.className = 'secondary';
       els.modeBuscar.className = 'good';
+      els.buscarModelo.value = '';
       els.buscarRFID.value = '';
+      els.rfidObjetivo.value = '';
+      els.listaObjetivos.className = 'notice warning';
+      els.listaObjetivos.textContent = 'Busca una prenda para ver RFIDs dados de alta.';
       els.resultadoLocalizar.className = 'notice warning';
-      els.resultadoLocalizar.textContent = 'Esperando RFID...';
-      setTimeout(() => els.buscarRFID.focus(), 100);
+      els.resultadoLocalizar.textContent = 'Esperando selección...';
+      setTimeout(() => els.buscarModelo.focus(), 100);
+    }
+
+    function renderObjetivos() {
+      const qRaw = normalize(els.buscarModelo.value);
+      const q = qRaw.toLowerCase();
+      if (!q) {
+        els.listaObjetivos.className = 'notice warning';
+        els.listaObjetivos.textContent = 'Busca una prenda para ver RFIDs dados de alta.';
+        return;
+      }
+      const eanBuscado = extractEAN(qRaw);
+      const rows = state.mappedRows.filter(r => r.rfid && (
+        (eanBuscado && r.ean === eanBuscado) ||
+        r.descripcion.toLowerCase().includes(q) ||
+        `${r.descripcion} ${r.talla}`.toLowerCase().includes(q)
+      )).slice(0, 30);
+
+      if (!rows.length) {
+        els.listaObjetivos.className = 'notice danger';
+        els.listaObjetivos.textContent = 'No hay prendas dadas de alta con ese modelo/EAN.';
+        return;
+      }
+
+      els.listaObjetivos.className = 'notice';
+      els.listaObjetivos.innerHTML = rows.map(r => `
+        <button class="secondary" data-rfid-target="${escapeHtml(r.rfid)}" style="margin:4px 0; text-align:left; width:100%;">
+          ${escapeHtml(r.descripcion)} T${escapeHtml(r.talla)} · ${escapeHtml(r.tipoMedida || r.manga)} ${escapeHtml(r.medida || '')} · ${escapeHtml(r.estado)} · Ub ${escapeHtml(r.ubicacion)}<br>
+          <span class="mono">${escapeHtml(r.rfid)}</span>
+        </button>
+      `).join('');
+    }
+
+    function beepOk() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = 1200;
+        gain.gain.value = 0.25;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setTimeout(() => { osc.stop(); ctx.close(); }, 250);
+      } catch(e) {}
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     }
 
     els.modeAlta.addEventListener('click', setModeAlta);
     els.modeBuscar.addEventListener('click', setModeLocalizar);
+    els.buscarModelo.addEventListener('input', () => setTimeout(renderObjetivos, 150));
+    els.listaObjetivos.addEventListener('click', e => {
+      const btn = e.target.closest('[data-rfid-target]');
+      if (!btn) return;
+      els.rfidObjetivo.value = btn.dataset.rfidTarget;
+      els.resultadoLocalizar.className = 'notice warning';
+      els.resultadoLocalizar.innerHTML = `Objetivo seleccionado:<br><span class="mono">${escapeHtml(els.rfidObjetivo.value)}</span>`;
+      els.buscarRFID.focus();
+    });
+    els.btnIniciarBusqueda.addEventListener('click', () => {
+      els.buscarRFID.value = '';
+      els.resultadoLocalizar.className = 'notice warning';
+      els.resultadoLocalizar.textContent = 'Buscando... mueve la pistola con el gatillo pulsado.';
+      els.buscarRFID.focus();
+    });
     els.btnClearAll.addEventListener('click', resetAll);
 
     els.tbody.addEventListener('click', e => {
@@ -1125,7 +1209,25 @@
     handleScanInput(els.buscarRFID, () => {
       const rfid = extractRFID(els.buscarRFID.value);
       if (!rfid) return;
-      els.buscarRFID.value = rfid;
+      els.buscarRFID.value = '';
+      const objetivo = cleanRFID(els.rfidObjetivo.value);
+
+      if (objetivo) {
+        if (rfid === objetivo) {
+          const row = state.mappedRows.find(r => r.rfid === rfid);
+          els.resultadoLocalizar.className = 'notice success';
+          els.resultadoLocalizar.innerHTML = `
+            <b>¡PRENDA ENCONTRADA!</b><br>
+            ${row ? `<b>${escapeHtml(row.descripcion)}</b><br>Talla: ${escapeHtml(row.talla)}<br>Medida: ${escapeHtml(row.tipoMedida || row.manga)} ${escapeHtml(row.medida || '')}<br>Estado: ${escapeHtml(row.estado)}<br>Ubicación: ${escapeHtml(row.ubicacion)}<br>Nota: ${escapeHtml(row.nota || '-')}` : `<span class="mono">${escapeHtml(rfid)}</span>`}
+          `;
+          beepOk();
+        } else {
+          els.resultadoLocalizar.className = 'notice warning';
+          els.resultadoLocalizar.innerHTML = `Leído otro RFID:<br><span class="mono">${escapeHtml(rfid)}</span><br>Sigue buscando.`;
+        }
+        return;
+      }
+
       const row = state.mappedRows.find(r => r.rfid === rfid);
       if (!row) {
         els.resultadoLocalizar.className = 'notice danger';
