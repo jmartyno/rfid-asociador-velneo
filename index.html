@@ -483,6 +483,35 @@
       return normalize(v).replace(/\s+/g, '').toUpperCase();
     }
 
+    function splitScanValues(v) {
+      return String(v ?? '')
+        .split(/[\r\n\t ]+/)
+        .map(x => x.trim())
+        .filter(Boolean);
+    }
+
+    function isRFIDValue(v) {
+      const s = cleanRFID(v);
+      return /^E[0-9A-F]{10,}$/i.test(s) || /^[0-9A-F]{20,}$/i.test(s);
+    }
+
+    function isEANValue(v) {
+      const s = normalize(v).replace(/\D/g, '');
+      return /^\d{8,14}$/.test(s);
+    }
+
+    function extractEAN(v) {
+      const parts = splitScanValues(v);
+      const found = parts.find(isEANValue);
+      return found ? found.replace(/\D/g, '') : '';
+    }
+
+    function extractRFID(v) {
+      const parts = splitScanValues(v);
+      const found = parts.find(isRFIDValue);
+      return found ? cleanRFID(found) : '';
+    }
+
     function detectSeparator(text) {
       const firstLine = text.split(/\r?\n/).find(Boolean) || '';
       const counts = {
@@ -718,8 +747,8 @@
 
     function associateByEANAndRFID() {
       clearStatus();
-      const ean = normalize(els.scanEAN.value);
-      const rfid = cleanRFID(els.scanRFID.value);
+      const ean = extractEAN(els.scanEAN.value);
+      const rfid = extractRFID(els.scanRFID.value);
 
       if (!ean) {
         setStatus('Falta escanear el EAN.', 'danger');
@@ -764,7 +793,7 @@
     function associateSelected() {
       clearStatus();
       const row = state.mappedRows.find(r => r.id === state.selectedId);
-      const rfid = cleanRFID(els.scanRFID.value);
+      const rfid = extractRFID(els.scanRFID.value);
 
       if (!row) {
         setStatus('Selecciona primero una fila o escanea un EAN.', 'danger');
@@ -949,8 +978,9 @@
     }
 
     handleScanInput(els.scanRFID, () => {
-      const rfid = cleanRFID(els.scanRFID.value);
+      const rfid = extractRFID(els.scanRFID.value);
       if (!rfid) return;
+      els.scanRFID.value = rfid;
       if (state.selectedId) {
         return;
       }
@@ -963,8 +993,9 @@
     });
 
     handleScanInput(els.scanEAN, () => {
-      const ean = normalize(els.scanEAN.value);
+      const ean = extractEAN(els.scanEAN.value);
       if (!ean) return;
+      els.scanEAN.value = ean;
       const match = state.mappedRows.find(r => r.ean === ean && !r.rfid) || state.mappedRows.find(r => r.ean === ean);
       if (match) {
         state.selectedId = match.id;
