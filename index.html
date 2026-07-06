@@ -256,9 +256,10 @@ function extractRFID(v){
   return rfids[0] || '';
 }
 function extractRFIDs(v){
-  // Devuelve todos los RFID leídos, aunque la pistola los vaya pegando uno detrás de otro.
+  // La pistola a veces concatena varias lecturas: E280...E280...E280...
+  // Los EPC de estas etiquetas son de 24 caracteres y empiezan normalmente por E280.
   const s = String(v || '').toUpperCase().replace(/[^0-9A-FE]/g,'');
-  const matches = s.match(/E[0-9A-F]{16,}/g) || [];
+  const matches = s.match(/E280[0-9A-F]{20}/g) || [];
   return matches.map(cleanRFID);
 }
 
@@ -522,22 +523,27 @@ function selectTarget(rfid){
   els.buscarRFID.focus();
 }
 function checkLocalizar(){
-  const target=cleanRFID(els.rfidObjetivo.value);
-  const vistos=extractRFIDs(els.buscarRFID.value);
-  if(!target||!vistos.length) return;
+  const target = cleanRFID(els.rfidObjetivo.value);
+  const raw = els.buscarRFID.value;
+  const vistos = extractRFIDs(raw);
 
-  // Limpiamos la caja SIEMPRE para que la siguiente pulsación no se pegue detrás.
-  els.buscarRFID.value='';
+  // Limpiar siempre, incluso aunque aún no haya detectado un EPC completo.
+  // Se hace en el siguiente ciclo para que Android/Keyboard Emulator no lo vuelva a pegar.
+  setTimeout(()=>{
+    els.buscarRFID.value = '';
+    els.buscarRFID.focus();
+  }, 0);
+
+  if(!target || !vistos.length) return;
 
   if(vistos.includes(target)){
     els.resultadoLocalizar.className='notice success';
     els.resultadoLocalizar.textContent='✅ ENCONTRADO. Ese es el RFID objetivo.';
     try{navigator.vibrate?.([300,100,300])}catch{}
   }else{
-    const ultimo=vistos[vistos.length-1];
+    const ultimo = vistos[vistos.length-1];
     els.resultadoLocalizar.className='notice warning';
     els.resultadoLocalizar.textContent=`Leído ${ultimo}, todavía no es el objetivo. Sigue moviendo la pistola.`;
-    setTimeout(()=>els.buscarRFID.focus(),50);
   }
 }
 function setMode(mode){
@@ -611,7 +617,8 @@ els.buscarEAN.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefaul
 els.buscarModelo.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();buscarCandidatosPorModelo()}});
 els.btnBuscarCandidatos.addEventListener('click',buscarCandidatosPorModelo);
 els.listaCandidatos.addEventListener('click',e=>{const btn=e.target.closest('[data-rfid]');if(btn)selectTarget(btn.dataset.rfid)});
-els.buscarRFID.addEventListener('input',debounce(checkLocalizar));
+els.buscarRFID.addEventListener('focus',()=>{els.buscarRFID.value=''});
+els.buscarRFID.addEventListener('input',debounce(checkLocalizar,30));
 
 els.search?.addEventListener('input',render);
 els.btnExportCsv.addEventListener('click',exportCsv);
