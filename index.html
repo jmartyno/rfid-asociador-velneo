@@ -522,23 +522,27 @@ function selectTarget(rfid){
   els.buscarRFID.value='';
   els.buscarRFID.focus();
 }
+let localizarBuffer = '';
+
 function checkLocalizar(){
   const target = cleanRFID(els.rfidObjetivo.value);
-  const raw = els.buscarRFID.value;
-  const vistos = extractRFIDs(raw);
+  localizarBuffer += els.buscarRFID.value || '';
 
-  // Limpiar siempre, incluso aunque aún no haya detectado un EPC completo.
-  // Se hace en el siguiente ciclo para que Android/Keyboard Emulator no lo vuelva a pegar.
-  setTimeout(()=>{
-    els.buscarRFID.value = '';
-    els.buscarRFID.focus();
-  }, 0);
+  // Limpia la caja inmediatamente para que no acumule lecturas.
+  els.buscarRFID.value = '';
+  setTimeout(()=>els.buscarRFID.focus(), 20);
 
+  const vistos = extractRFIDs(localizarBuffer);
   if(!target || !vistos.length) return;
+
+  // Dejamos en el buffer solo un trozo pequeño por si llega una lectura cortada.
+  const lastChunk = localizarBuffer.slice(-80);
+  localizarBuffer = lastChunk;
 
   if(vistos.includes(target)){
     els.resultadoLocalizar.className='notice success';
     els.resultadoLocalizar.textContent='✅ ENCONTRADO. Ese es el RFID objetivo.';
+    localizarBuffer = '';
     try{navigator.vibrate?.([300,100,300])}catch{}
   }else{
     const ultimo = vistos[vistos.length-1];
@@ -617,8 +621,8 @@ els.buscarEAN.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefaul
 els.buscarModelo.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();buscarCandidatosPorModelo()}});
 els.btnBuscarCandidatos.addEventListener('click',buscarCandidatosPorModelo);
 els.listaCandidatos.addEventListener('click',e=>{const btn=e.target.closest('[data-rfid]');if(btn)selectTarget(btn.dataset.rfid)});
-els.buscarRFID.addEventListener('focus',()=>{els.buscarRFID.value=''});
-els.buscarRFID.addEventListener('input',debounce(checkLocalizar,30));
+els.buscarRFID.addEventListener('focus',()=>{els.buscarRFID.value=''; localizarBuffer='';});
+els.buscarRFID.addEventListener('input',checkLocalizar);
 
 els.search?.addEventListener('input',render);
 els.btnExportCsv.addEventListener('click',exportCsv);
