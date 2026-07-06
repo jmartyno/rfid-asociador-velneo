@@ -252,9 +252,14 @@ function extractEAN(v){
   return m[0] || '';
 }
 function extractRFID(v){
+  const rfids = extractRFIDs(v);
+  return rfids[0] || '';
+}
+function extractRFIDs(v){
+  // Devuelve todos los RFID leídos, aunque la pistola los vaya pegando uno detrás de otro.
   const s = String(v || '').toUpperCase().replace(/[^0-9A-FE]/g,'');
-  const m = s.match(/E[0-9A-F]{16,}/);
-  return m ? cleanRFID(m[0]) : '';
+  const matches = s.match(/E[0-9A-F]{16,}/g) || [];
+  return matches.map(cleanRFID);
 }
 
 function detectSeparator(text){
@@ -518,16 +523,21 @@ function selectTarget(rfid){
 }
 function checkLocalizar(){
   const target=cleanRFID(els.rfidObjetivo.value);
-  const seen=extractRFID(els.buscarRFID.value);
-  if(!target||!seen) return;
-  els.buscarRFID.value=seen;
-  if(seen===target){
+  const vistos=extractRFIDs(els.buscarRFID.value);
+  if(!target||!vistos.length) return;
+
+  // Limpiamos la caja SIEMPRE para que la siguiente pulsación no se pegue detrás.
+  els.buscarRFID.value='';
+
+  if(vistos.includes(target)){
     els.resultadoLocalizar.className='notice success';
     els.resultadoLocalizar.textContent='✅ ENCONTRADO. Ese es el RFID objetivo.';
     try{navigator.vibrate?.([300,100,300])}catch{}
   }else{
+    const ultimo=vistos[vistos.length-1];
     els.resultadoLocalizar.className='notice warning';
-    els.resultadoLocalizar.textContent=`Leído ${seen}, todavía no es el objetivo.`;
+    els.resultadoLocalizar.textContent=`Leído ${ultimo}, todavía no es el objetivo. Sigue moviendo la pistola.`;
+    setTimeout(()=>els.buscarRFID.focus(),50);
   }
 }
 function setMode(mode){
