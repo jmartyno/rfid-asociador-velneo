@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Alta RFID Velneo</title>
+  <title>RFID Prendas Velneo</title>
   <style>
     :root{
       --bg:#f5f7fb;--card:#fff;--text:#102033;--muted:#64748b;--line:#dbe3ee;
@@ -37,7 +37,7 @@
     .split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .hidden{display:none!important}
     .mono{font-family:Consolas,monospace}
-    .top-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .top-buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
     .top-buttons button{margin:0}
     .candidate{
       display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border-radius:12px;
@@ -58,38 +58,41 @@
       .desktopOnly{display:none!important}
       .card{box-shadow:none;padding:10px;border-radius:12px}
       input,select,textarea{font-size:24px;padding:16px;min-height:62px}
-      button{font-size:23px;min-height:64px}
+      button{font-size:21px;min-height:62px}
       label{font-size:18px}
       .notice{font-size:20px}
       .bigbox{font-size:23px}
       .split{grid-template-columns:1fr 1fr}
-      #scanEAN,#scanRFID,#medidaManual,#buscarEAN,#buscarModelo,#buscarRFID{font-size:28px;font-weight:900}
+      #scanEAN,#scanRFID,#medidaManual,#buscarEAN,#buscarModelo,#buscarRFID,#consultaRFID{font-size:27px;font-weight:900}
     }
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Alta RFID prendas Velneo</h1>
+  <h1>RFID prendas Velneo</h1>
 
   <div class="top-buttons">
     <button id="modeAlta" class="good">ALTA</button>
-    <button id="modeBuscar" class="secondary">LOCALIZAR</button>
+    <button id="modeConsultar" class="secondary">RFID</button>
+    <button id="modeLocalizar" class="secondary">LOCALIZAR</button>
   </div>
 
   <div class="grid">
     <div>
       <div class="card desktopOnly">
-        <h2>Catálogo</h2>
+        <h2>Catálogo / Backup</h2>
         <div id="catalogStatus" class="notice warning">Cargando catálogo...</div>
-        <label>Archivo CSV manual</label>
+        <label>CSV manual</label>
         <input id="csvFile" type="file" accept=".csv,text/csv" />
-        <button id="btnExportCsv">Exportar asociaciones CSV</button>
-        <button id="btnClearAll" class="bad">Borrar asociaciones locales</button>
+        <button id="btnExportCsv">Exportar prendas RFID</button>
+        <button id="btnImportBackup" class="secondary">Importar backup CSV</button>
+        <input id="backupFile" class="hidden" type="file" accept=".csv,text/csv" />
+        <button id="btnClearAll" class="bad">Borrar prendas RFID locales</button>
       </div>
 
       <div class="card" id="altaPanel">
-        <h2>Alta rápida</h2>
-        <div class="notice success">Escanea EAN → rellena atributos → escanea RFID → guardar.</div>
+        <h2>Alta de prenda RFID</h2>
+        <div class="notice success">RFID manda: escanea EAN → rellena atributos → escanea RFID → crear/actualizar prenda única.</div>
 
         <label>Escanear EAN</label>
         <input id="scanEAN" type="text" inputmode="none" autocomplete="off" placeholder="Escanea EAN de Velneo" />
@@ -132,10 +135,20 @@
         <label>Escanear RFID</label>
         <input id="scanRFID" type="text" inputmode="none" autocomplete="off" placeholder="Escanea RFID para guardar" />
 
-        <button id="btnGuardarAlta" class="good">Guardar EAN + RFID</button>
+        <button id="btnGuardarAlta" class="good">Guardar prenda RFID</button>
         <button id="btnNueva" class="secondary">Nueva prenda</button>
 
         <div id="statusAlta" class="notice hidden"></div>
+      </div>
+
+      <div class="card hidden" id="consultarPanel">
+        <h2>Consultar por RFID</h2>
+        <div class="notice success">Escanea una etiqueta RFID y verás qué EAN/prenda tiene asociada.</div>
+
+        <label>Escanear RFID</label>
+        <input id="consultaRFID" type="text" inputmode="none" autocomplete="off" placeholder="Escanea RFID" />
+
+        <div id="resultadoConsulta" class="notice warning bigbox">Esperando RFID...</div>
       </div>
 
       <div class="card hidden" id="localizarPanel">
@@ -176,23 +189,23 @@
     <div class="desktopOnly">
       <div class="card">
         <div class="stats">
-          <div class="stat">Filas<br><b id="statBase">0</b></div>
-          <div class="stat">Con RFID<br><b id="statLinked">0</b></div>
-          <div class="stat">Sin RFID<br><b id="statUnlinked">0</b></div>
+          <div class="stat">Catálogo<br><b id="statCatalog">0</b></div>
+          <div class="stat">Prendas RFID<br><b id="statRFID">0</b></div>
           <div class="stat">RFID únicos<br><b id="statUnique">0</b></div>
+          <div class="stat">Duplicados<br><b id="statDup">0</b></div>
         </div>
       </div>
 
       <div class="card">
-        <h2>Base de trabajo</h2>
+        <h2>Prendas RFID dadas de alta</h2>
         <label>Buscar</label>
         <input id="search" type="search" placeholder="EAN, descripción, talla, RFID..." />
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>#</th><th>EAN</th><th>Descripción</th><th>Talla</th><th>Medida</th>
-                <th>Estado</th><th>Ubic.</th><th>Nota</th><th>RFID</th>
+                <th>#</th><th>RFID</th><th>EAN</th><th>Descripción</th><th>Talla</th><th>Medida</th>
+                <th>Estado</th><th>Ubic.</th><th>Nota</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -204,17 +217,18 @@
 </div>
 
 <script>
-const state = { rows: [], selectedRow: null, selectedTarget: null };
+const state = { catalog: [], prendas: [], selectedCatalogRow: null, selectedTarget: null };
 const $ = id => document.getElementById(id);
 
 const els = {
-  modeAlta:$('modeAlta'), modeBuscar:$('modeBuscar'),
-  catalogStatus:$('catalogStatus'), csvFile:$('csvFile'),
+  modeAlta:$('modeAlta'), modeConsultar:$('modeConsultar'), modeLocalizar:$('modeLocalizar'),
+  catalogStatus:$('catalogStatus'), csvFile:$('csvFile'), backupFile:$('backupFile'),
   scanEAN:$('scanEAN'), scanRFID:$('scanRFID'), productBox:$('productBox'),
   tipoMedidaManual:$('tipoMedidaManual'), medidaManual:$('medidaManual'),
   estadoManual:$('estadoManual'), ubicacionManual:$('ubicacionManual'), notaManual:$('notaManual'),
   btnGuardarAlta:$('btnGuardarAlta'), btnNueva:$('btnNueva'), statusAlta:$('statusAlta'),
-  altaPanel:$('altaPanel'), localizarPanel:$('localizarPanel'),
+  altaPanel:$('altaPanel'), consultarPanel:$('consultarPanel'), localizarPanel:$('localizarPanel'),
+  consultaRFID:$('consultaRFID'), resultadoConsulta:$('resultadoConsulta'),
   btnAbrirBusqueda:$('btnAbrirBusqueda'), tipoBusquedaPanel:$('tipoBusquedaPanel'),
   btnBuscarPorEAN:$('btnBuscarPorEAN'), btnBuscarPorModelo:$('btnBuscarPorModelo'),
   busquedaEANPanel:$('busquedaEANPanel'), busquedaModeloPanel:$('busquedaModeloPanel'),
@@ -222,8 +236,8 @@ const els = {
   listaCandidatos:$('listaCandidatos'), rfidObjetivo:$('rfidObjetivo'),
   buscarRFID:$('buscarRFID'), resultadoLocalizar:$('resultadoLocalizar'),
   tbody:$('tbody'), search:$('search'),
-  statBase:$('statBase'), statLinked:$('statLinked'), statUnlinked:$('statUnlinked'), statUnique:$('statUnique'),
-  btnExportCsv:$('btnExportCsv'), btnClearAll:$('btnClearAll')
+  statCatalog:$('statCatalog'), statRFID:$('statRFID'), statUnique:$('statUnique'), statDup:$('statDup'),
+  btnExportCsv:$('btnExportCsv'), btnImportBackup:$('btnImportBackup'), btnClearAll:$('btnClearAll')
 };
 
 function normalize(v){ return String(v ?? '').trim(); }
@@ -251,7 +265,7 @@ function detectSeparator(text){
 function parseCSV(text, sepOpt='auto'){
   const sep = sepOpt === 'auto' ? detectSeparator(text) : sepOpt;
   const lines = text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim()!=='');
-  if(!lines.length) return [];
+  if(!lines.length) return {headers:[], rows:[]};
   function split(line){
     const out=[]; let cur=''; let q=false;
     for(let i=0;i<line.length;i++){
@@ -264,42 +278,49 @@ function parseCSV(text, sepOpt='auto'){
     return out.map(x=>x.trim());
   }
   const headers = split(lines[0]).map(h=>h.toLowerCase().trim());
-  return lines.slice(1).map((line,idx)=>{
+  const rows = lines.slice(1).map(line=>{
     const p = split(line), o = {};
     headers.forEach((h,i)=>o[h]=p[i]??'');
-    return normalizeRow(o,idx);
+    return o;
   });
+  return {headers, rows};
 }
-function normalizeRow(o,idx){
+function normalizeCatalog(o,idx){
   const d = o.descripcion || o['descripción'] || o.concepto || o.nombre || '';
   return {
-    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+idx),
-    baseIndex:idx, codigo:o.codigo||'', ean:normalize(o.ean||''),
-    descripcion:normalize(d), talla:normalize(o.talla||''),
-    rfid:'', tipoMedida:'', medida:'', estado:'', ubicacion:'', nota:'', usos:0
+    catalogId: String(idx),
+    codigo: normalize(o.codigo || ''),
+    ean: normalize(o.ean || ''),
+    descripcion: normalize(d),
+    talla: normalize(o.talla || '')
   };
 }
-function saveLocal(){
-  localStorage.setItem('rfidAsociacionesV3', JSON.stringify(state.rows.map(r=>({
-    ean:r.ean, descripcion:r.descripcion, talla:r.talla, rfid:r.rfid,
-    tipoMedida:r.tipoMedida, medida:r.medida, estado:r.estado, ubicacion:r.ubicacion, nota:r.nota, usos:r.usos
-  }))));
+function normalizePrenda(o){
+  return {
+    rfid: cleanRFID(o.rfid || o.RFID || ''),
+    ean: normalize(o.ean || o.EAN || ''),
+    codigo: normalize(o.codigo || o.CODIGO || ''),
+    descripcion: normalize(o.descripcion || o.DESCRIPCION || o['descripción'] || ''),
+    talla: normalize(o.talla || o.TALLA || ''),
+    tipoMedida: normalize(o.tipo_medida || o.TIPO_MEDIDA || o.tipomedida || ''),
+    medida: normalize(o.medida || o.MEDIDA || ''),
+    estado: normalize(o.estado || o.ESTADO || ''),
+    ubicacion: normalize(o.ubicacion || o.UBICACION || o['ubicación'] || ''),
+    nota: normalize(o.nota || o.NOTA || ''),
+    usos: Number(o.usos || o.USOS || 0)
+  };
 }
-function mergeSaved(){
-  let saved=[];
-  try{ saved=JSON.parse(localStorage.getItem('rfidAsociacionesV3')||'[]'); }catch{}
-  if(!Array.isArray(saved)) return;
-  const used = new Set();
-  saved.forEach(s=>{
-    const row = state.rows.find((r,i)=>!used.has(i)&&r.ean===s.ean&&r.descripcion===s.descripcion&&r.talla===s.talla&&!r.rfid);
-    if(row){
-      Object.assign(row,{
-        rfid:s.rfid||'', tipoMedida:s.tipoMedida||'', medida:s.medida||'',
-        estado:s.estado||'', ubicacion:s.ubicacion||'', nota:s.nota||'', usos:s.usos||0
-      });
-      used.add(state.rows.indexOf(row));
-    }
-  });
+
+function savePrendas(){
+  localStorage.setItem('rfidPrendasV4', JSON.stringify(state.prendas));
+}
+function loadPrendas(){
+  try{
+    const data = JSON.parse(localStorage.getItem('rfidPrendasV4') || '[]');
+    state.prendas = Array.isArray(data) ? data.map(normalizePrenda).filter(p=>p.rfid) : [];
+  }catch{
+    state.prendas = [];
+  }
 }
 function tipoMedida(desc){
   const s = String(desc||'').toUpperCase();
@@ -308,14 +329,15 @@ function tipoMedida(desc){
   return 'MEDIDA';
 }
 async function loadCatalogAuto(){
+  loadPrendas();
   try{
     const res = await fetch('catalogo.csv',{cache:'no-store'});
     if(!res.ok) throw new Error();
     const text = await res.text();
-    state.rows = parseCSV(text,'auto');
-    mergeSaved();
+    const parsed = parseCSV(text,'auto');
+    state.catalog = parsed.rows.map(normalizeCatalog).filter(r=>r.ean);
     els.catalogStatus.className='notice success';
-    els.catalogStatus.textContent=`Catálogo cargado automáticamente desde catalogo.csv: ${state.rows.length} filas.`;
+    els.catalogStatus.textContent=`Catálogo cargado: ${state.catalog.length} filas. Prendas RFID: ${state.prendas.length}.`;
     render();
   }catch(e){
     els.catalogStatus.className='notice warning';
@@ -324,20 +346,20 @@ async function loadCatalogAuto(){
   }
 }
 function render(){
-  const linked = state.rows.filter(r=>r.rfid).length;
-  const unique = new Set(state.rows.map(r=>r.rfid).filter(Boolean)).size;
-  els.statBase.textContent = state.rows.length;
-  els.statLinked.textContent = linked;
-  els.statUnlinked.textContent = state.rows.length-linked;
+  const unique = new Set(state.prendas.map(p=>p.rfid)).size;
+  els.statCatalog.textContent = state.catalog.length;
+  els.statRFID.textContent = state.prendas.length;
   els.statUnique.textContent = unique;
+  els.statDup.textContent = state.prendas.length - unique;
+
   const q = normalize(els.search?.value).toLowerCase();
-  const rows = state.rows.filter(r=>!q || `${r.ean} ${r.descripcion} ${r.talla} ${r.rfid} ${r.estado} ${r.ubicacion} ${r.nota}`.toLowerCase().includes(q)).slice(0,300);
-  els.tbody.innerHTML = rows.map((r,i)=>`
+  const rows = state.prendas.filter(p=>!q || `${p.rfid} ${p.ean} ${p.descripcion} ${p.talla} ${p.estado} ${p.ubicacion} ${p.nota}`.toLowerCase().includes(q)).slice(0,300);
+  els.tbody.innerHTML = rows.map((p,i)=>`
     <tr>
-      <td>${i+1}</td><td class="mono">${escapeHtml(r.ean)}</td><td>${escapeHtml(r.descripcion)}</td>
-      <td>${escapeHtml(r.talla)}</td><td>${escapeHtml(r.tipoMedida)} ${escapeHtml(r.medida)}</td>
-      <td>${escapeHtml(r.estado)}</td><td>${escapeHtml(r.ubicacion)}</td><td>${escapeHtml(r.nota)}</td>
-      <td class="mono">${r.rfid ? escapeHtml(r.rfid) : '<span style="color:#dc2626;font-weight:800">SIN RFID</span>'}</td>
+      <td>${i+1}</td><td class="mono">${escapeHtml(p.rfid)}</td><td class="mono">${escapeHtml(p.ean)}</td>
+      <td>${escapeHtml(p.descripcion)}</td><td>${escapeHtml(p.talla)}</td>
+      <td>${escapeHtml(p.tipoMedida)} ${escapeHtml(p.medida)}</td>
+      <td>${escapeHtml(p.estado)}</td><td>${escapeHtml(p.ubicacion)}</td><td>${escapeHtml(p.nota)}</td>
     </tr>`).join('');
 }
 function setStatus(el,msg,type='notice'){
@@ -345,15 +367,15 @@ function setStatus(el,msg,type='notice'){
   el.textContent=msg;
   el.classList.remove('hidden');
 }
-function selectByEAN(ean){
-  const row = state.rows.find(r=>r.ean===ean&&!r.rfid) || state.rows.find(r=>r.ean===ean);
+function selectCatalogByEAN(ean){
+  const row = state.catalog.find(r=>r.ean===ean);
   if(!row){
-    state.selectedRow=null;
+    state.selectedCatalogRow=null;
     els.productBox.className='notice danger bigbox';
-    els.productBox.textContent=`EAN no encontrado: ${ean}`;
+    els.productBox.textContent=`EAN no encontrado en catálogo: ${ean}`;
     return;
   }
-  state.selectedRow=row;
+  state.selectedCatalogRow=row;
   const tm=tipoMedida(row.descripcion);
   els.tipoMedidaManual.value=tm;
   els.productBox.className='notice success bigbox';
@@ -365,29 +387,68 @@ function guardarAlta(){
   const rfid=extractRFID(els.scanRFID.value);
   if(!ean) return setStatus(els.statusAlta,'Falta EAN.','danger');
   if(!rfid) return setStatus(els.statusAlta,'Falta RFID.','danger');
-  const already=state.rows.find(r=>r.rfid===rfid);
-  if(already) return setStatus(els.statusAlta,`RFID ya asociado a ${already.descripcion} T${already.talla}.`,'danger');
-  const row = state.selectedRow && state.selectedRow.ean===ean && !state.selectedRow.rfid ? state.selectedRow : state.rows.find(r=>r.ean===ean&&!r.rfid);
-  if(!row) return setStatus(els.statusAlta,'No queda fila libre para ese EAN o no existe.','danger');
-  row.rfid=rfid;
-  row.tipoMedida=els.tipoMedidaManual.value||tipoMedida(row.descripcion);
-  row.medida=normalize(els.medidaManual.value);
-  row.estado=normalize(els.estadoManual.value);
-  row.ubicacion=normalize(els.ubicacionManual.value);
-  row.nota=normalize(els.notaManual.value);
-  saveLocal(); render();
-  setStatus(els.statusAlta,`Guardado: ${row.descripcion} T${row.talla} → ${rfid}`,'success');
+
+  const catalog = state.selectedCatalogRow && state.selectedCatalogRow.ean===ean
+    ? state.selectedCatalogRow
+    : state.catalog.find(r=>r.ean===ean);
+
+  if(!catalog) return setStatus(els.statusAlta,'EAN no encontrado en catálogo.','danger');
+
+  const existing = state.prendas.find(p=>p.rfid===rfid);
+  const prenda = {
+    rfid,
+    ean: catalog.ean,
+    codigo: catalog.codigo,
+    descripcion: catalog.descripcion,
+    talla: catalog.talla,
+    tipoMedida: els.tipoMedidaManual.value || tipoMedida(catalog.descripcion),
+    medida: normalize(els.medidaManual.value),
+    estado: normalize(els.estadoManual.value),
+    ubicacion: normalize(els.ubicacionManual.value),
+    nota: normalize(els.notaManual.value),
+    usos: existing ? existing.usos : 0
+  };
+
+  if(existing){
+    Object.assign(existing, prenda);
+    setStatus(els.statusAlta,`Actualizado RFID existente: ${prenda.descripcion} T${prenda.talla}.`,'warning');
+  }else{
+    state.prendas.push(prenda);
+    setStatus(els.statusAlta,`Creada prenda RFID: ${prenda.descripcion} T${prenda.talla}.`,'success');
+  }
+
+  savePrendas();
+  render();
   nuevaPrenda();
 }
 function nuevaPrenda(){
   els.scanEAN.value=''; els.scanRFID.value=''; els.medidaManual.value=''; els.notaManual.value='';
-  state.selectedRow=null;
+  state.selectedCatalogRow=null;
   els.productBox.className='notice warning bigbox';
   els.productBox.textContent='Ningún EAN seleccionado.';
   els.tipoMedidaManual.value='';
   els.scanEAN.focus();
 }
-
+function consultarPorRFID(){
+  const rfid = extractRFID(els.consultaRFID.value);
+  if(!rfid) return;
+  els.consultaRFID.value = rfid;
+  const p = state.prendas.find(x=>x.rfid===rfid);
+  if(!p){
+    els.resultadoConsulta.className='notice danger bigbox';
+    els.resultadoConsulta.innerHTML=`RFID no dado de alta:<br><span class="mono">${escapeHtml(rfid)}</span>`;
+    return;
+  }
+  els.resultadoConsulta.className='notice success bigbox';
+  els.resultadoConsulta.innerHTML=`
+    <b>${escapeHtml(p.descripcion)} T${escapeHtml(p.talla)}</b><br>
+    EAN: <span class="mono">${escapeHtml(p.ean)}</span><br>
+    RFID: <span class="mono">${escapeHtml(p.rfid)}</span><br>
+    ${escapeHtml(p.tipoMedida)}: <b>${escapeHtml(p.medida)}</b><br>
+    Estado: <b>${escapeHtml(p.estado)}</b> · Ubicación: <b>${escapeHtml(p.ubicacion)}</b><br>
+    Nota: ${escapeHtml(p.nota)}
+  `;
+}
 function abrirOpcionesBusqueda(){
   els.tipoBusquedaPanel.classList.remove('hidden');
   els.busquedaEANPanel.classList.add('hidden');
@@ -414,23 +475,22 @@ function buscarPorModelo(){
 function renderCandidatos(rows){
   if(!rows.length){
     els.listaCandidatos.className='notice danger';
-    els.listaCandidatos.textContent='No hay candidatos dados de alta.';
+    els.listaCandidatos.textContent='No hay prendas RFID dadas de alta con esa búsqueda.';
     return;
   }
   els.listaCandidatos.className='notice';
   els.listaCandidatos.innerHTML=`<b>${rows.length} candidato(s). Pulsa el que quieres localizar:</b>`+
-    rows.map(r=>`<button class="candidate" data-rfid="${escapeHtml(r.rfid)}">
-      <b>${escapeHtml(r.descripcion)} T${escapeHtml(r.talla)}</b><br>
-      ${escapeHtml(r.tipoMedida)} ${escapeHtml(r.medida)} · ${escapeHtml(r.estado)} · Ub ${escapeHtml(r.ubicacion)}<br>
-      <span class="mono">${escapeHtml(r.rfid)}</span>
+    rows.map(p=>`<button class="candidate" data-rfid="${escapeHtml(p.rfid)}">
+      <b>${escapeHtml(p.descripcion)} T${escapeHtml(p.talla)}</b><br>
+      ${escapeHtml(p.tipoMedida)} ${escapeHtml(p.medida)} · ${escapeHtml(p.estado)} · Ub ${escapeHtml(p.ubicacion)}<br>
+      <span class="mono">${escapeHtml(p.rfid)}</span>
     </button>`).join('');
 }
 function buscarCandidatosPorEAN(){
   const ean=extractEAN(els.buscarEAN.value);
   if(!ean) return;
   els.buscarEAN.value=ean;
-  const rows=state.rows.filter(r=>r.rfid && r.ean===ean).slice(0,40);
-  renderCandidatos(rows);
+  renderCandidatos(state.prendas.filter(p=>p.ean===ean).slice(0,40));
 }
 function buscarCandidatosPorModelo(){
   const qRaw=normalize(els.buscarModelo.value);
@@ -441,19 +501,18 @@ function buscarCandidatosPorModelo(){
     return;
   }
   const words=q.split(/\s+/).filter(Boolean);
-  const rows=state.rows.filter(r=>{
-    if(!r.rfid) return false;
-    const txt=`${r.ean} ${r.descripcion} ${r.talla} ${r.tipoMedida} ${r.medida} ${r.estado} ${r.ubicacion} ${r.nota}`.toLowerCase();
+  const rows=state.prendas.filter(p=>{
+    const txt=`${p.ean} ${p.descripcion} ${p.talla} ${p.tipoMedida} ${p.medida} ${p.estado} ${p.ubicacion} ${p.nota}`.toLowerCase();
     return words.every(w=>txt.includes(w));
   }).slice(0,40);
   renderCandidatos(rows);
 }
 function selectTarget(rfid){
-  const row=state.rows.find(r=>r.rfid===rfid);
-  state.selectedTarget=row||null;
+  const p=state.prendas.find(x=>x.rfid===rfid);
+  state.selectedTarget=p||null;
   els.rfidObjetivo.value=rfid;
   els.resultadoLocalizar.className='notice warning';
-  els.resultadoLocalizar.textContent=row ? `Objetivo seleccionado: ${row.descripcion} T${row.talla}. Ahora mueve la pistola.` : 'Objetivo seleccionado.';
+  els.resultadoLocalizar.textContent=p ? `Objetivo seleccionado: ${p.descripcion} T${p.talla}. Ahora mueve la pistola.` : 'Objetivo seleccionado.';
   els.buscarRFID.value='';
   els.buscarRFID.focus();
 }
@@ -472,17 +531,21 @@ function checkLocalizar(){
   }
 }
 function setMode(mode){
-  if(mode==='alta'){
-    els.altaPanel.classList.remove('hidden');
-    els.localizarPanel.classList.add('hidden');
-    els.modeAlta.className='good';
-    els.modeBuscar.className='secondary';
-    setTimeout(()=>els.scanEAN.focus(),100);
-  }else{
-    els.altaPanel.classList.add('hidden');
-    els.localizarPanel.classList.remove('hidden');
-    els.modeAlta.className='secondary';
-    els.modeBuscar.className='good';
+  els.altaPanel.classList.toggle('hidden', mode!=='alta');
+  els.consultarPanel.classList.toggle('hidden', mode!=='consultar');
+  els.localizarPanel.classList.toggle('hidden', mode!=='localizar');
+  els.modeAlta.className = mode==='alta' ? 'good' : 'secondary';
+  els.modeConsultar.className = mode==='consultar' ? 'good' : 'secondary';
+  els.modeLocalizar.className = mode==='localizar' ? 'good' : 'secondary';
+
+  if(mode==='alta') setTimeout(()=>els.scanEAN.focus(),100);
+  if(mode==='consultar'){
+    els.consultaRFID.value='';
+    els.resultadoConsulta.className='notice warning bigbox';
+    els.resultadoConsulta.textContent='Esperando RFID...';
+    setTimeout(()=>els.consultaRFID.focus(),100);
+  }
+  if(mode==='localizar'){
     els.tipoBusquedaPanel.classList.add('hidden');
     els.busquedaEANPanel.classList.add('hidden');
     els.busquedaModeloPanel.classList.add('hidden');
@@ -493,30 +556,42 @@ function setMode(mode){
   }
 }
 function exportCsv(){
-  const headers=['EAN','DESCRIPCION','TALLA','TIPO_MEDIDA','MEDIDA','ESTADO','UBICACION','NOTA','RFID','USOS'];
+  const headers=['RFID','EAN','CODIGO','DESCRIPCION','TALLA','TIPO_MEDIDA','MEDIDA','ESTADO','UBICACION','NOTA','USOS'];
   const lines=[headers.join(';')];
-  state.rows.filter(r=>r.rfid).forEach(r=>{
-    const vals=[r.ean,r.descripcion,r.talla,r.tipoMedida,r.medida,r.estado,r.ubicacion,r.nota,r.rfid,r.usos]
+  state.prendas.forEach(p=>{
+    const vals=[p.rfid,p.ean,p.codigo,p.descripcion,p.talla,p.tipoMedida,p.medida,p.estado,p.ubicacion,p.nota,p.usos]
       .map(v=>`"${String(v??'').replace(/"/g,'""')}"`);
     lines.push(vals.join(';'));
   });
   const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='asociaciones_rfid_velneo.csv';
+  a.download='prendas_rfid_velneo.csv';
   a.click();
   URL.revokeObjectURL(a.href);
 }
+function importBackupCsv(text){
+  const parsed = parseCSV(text,'auto');
+  state.prendas = parsed.rows.map(normalizePrenda).filter(p=>p.rfid);
+  savePrendas();
+  render();
+  els.catalogStatus.className='notice success';
+  els.catalogStatus.textContent=`Backup importado: ${state.prendas.length} prendas RFID.`;
+}
 function debounce(fn,ms=80){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms)}}
 
-els.scanEAN.addEventListener('input',debounce(()=>{const ean=extractEAN(els.scanEAN.value);if(ean){els.scanEAN.value=ean;selectByEAN(ean)}}));
-els.scanEAN.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const ean=extractEAN(els.scanEAN.value);if(ean)selectByEAN(ean)}});
+els.scanEAN.addEventListener('input',debounce(()=>{const ean=extractEAN(els.scanEAN.value);if(ean){els.scanEAN.value=ean;selectCatalogByEAN(ean)}}));
+els.scanEAN.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const ean=extractEAN(els.scanEAN.value);if(ean)selectCatalogByEAN(ean)}});
 els.scanRFID.addEventListener('input',debounce(()=>{const rfid=extractRFID(els.scanRFID.value);if(rfid){els.scanRFID.value=rfid;guardarAlta()}}));
 
 els.btnGuardarAlta.addEventListener('click',guardarAlta);
 els.btnNueva.addEventListener('click',nuevaPrenda);
 els.modeAlta.addEventListener('click',()=>setMode('alta'));
-els.modeBuscar.addEventListener('click',()=>setMode('buscar'));
+els.modeConsultar.addEventListener('click',()=>setMode('consultar'));
+els.modeLocalizar.addEventListener('click',()=>setMode('localizar'));
+
+els.consultaRFID.addEventListener('input',debounce(consultarPorRFID));
+els.consultaRFID.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();consultarPorRFID()}});
 
 els.btnAbrirBusqueda.addEventListener('click',abrirOpcionesBusqueda);
 els.btnBuscarPorEAN.addEventListener('click',buscarPorEAN);
@@ -530,8 +605,10 @@ els.buscarRFID.addEventListener('input',debounce(checkLocalizar));
 
 els.search?.addEventListener('input',render);
 els.btnExportCsv.addEventListener('click',exportCsv);
-els.btnClearAll.addEventListener('click',()=>{if(confirm('¿Borrar asociaciones guardadas en este navegador?')){localStorage.removeItem('rfidAsociacionesV3');location.reload()}});
-els.csvFile.addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const text=await file.text();state.rows=parseCSV(text,'auto');mergeSaved();els.catalogStatus.className='notice success';els.catalogStatus.textContent=`CSV cargado manualmente: ${state.rows.length} filas.`;render()});
+els.btnImportBackup.addEventListener('click',()=>els.backupFile.click());
+els.backupFile.addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;importBackupCsv(await file.text())});
+els.btnClearAll.addEventListener('click',()=>{if(confirm('¿Borrar prendas RFID guardadas en este navegador?')){localStorage.removeItem('rfidPrendasV4');state.prendas=[];render()}});
+els.csvFile.addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const text=await file.text();const parsed=parseCSV(text,'auto');state.catalog=parsed.rows.map(normalizeCatalog).filter(r=>r.ean);els.catalogStatus.className='notice success';els.catalogStatus.textContent=`CSV cargado manualmente: ${state.catalog.length} filas.`;render()});
 
 loadCatalogAuto();
 setMode('alta');
